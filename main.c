@@ -486,7 +486,7 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 				{
 					den = w1 + akt*(p[ik*7+3]*cos(tht)+p[ik*7+4]*sin(tht))/twopi - p[ik*7];
 					den = den*den + p[ik*7+2]*p[ik*7+2]/4.0;
-					x2 = (p[ik*7+1]+p[ik*7+5]*cos(tht-p[ik*7+6]))*p[ik*7+2]/(2.0*den);
+					x2 = (p[ik*7+1]+p[ik*7+5]*cos(2.0*tht-p[ik*7+6]))*p[ik*7+2]/(2.0*den);
 					/*x2 += p[ik*7+5]*cos(tht-p[ik*7+6]);*/
 					deviates[num] += x2;
 				}
