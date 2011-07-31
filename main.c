@@ -6,15 +6,16 @@
 
 void usage (char* name)
 {
-	printf("Usage: \n%s spectrum model output\n", name);
+	printf("Usage: \n%s paramfile\n", name);
 }
 
 int main (int argc, char* argv[])
 {
 	fitsfile *fptr;
 	FILE *fpmodel, *fpout, *fpdebug;
+	struct params par;
 	int status = 0;
-	int silent, ii, ij, ik;
+	int ii, ij, ik;
 	int ntheta, nk, nnu;
 	float delta_nu, delta_k;
 	float ***pol, *buff, ***noise;
@@ -34,20 +35,22 @@ int main (int argc, char* argv[])
 	mpconf = malloc(sizeof(mp_config));
 	double sum, sum2, sum3;
 
-	if (argc < 4)
+	if (argc < 2)
 	{
 		usage(argv[0]);
 		return EXIT_FAILURE;
 	}
-	silent = 0;
+
+	/* Read param file and set run parameters */
+	read_param_file(argv[1], &par);
 	numback = 6;
 
 /* Open FITS file and read keys */
-	if (!silent) printf("Reading FITS file: %s\n", argv[1]);
-	fits_open_file(&fptr, argv[1], READONLY, &status);
+	if (!par.silent) printf("Reading FITS file: %s\n", par.fitsfname);
+	fits_open_file(&fptr, par.fitsfname, READONLY, &status);
 	if (status)
 	{
-		printf("Error opening FITS file: %s\n", argv[1]);
+		printf("Error opening FITS file: %s\n", par.fitsfname);
 		fits_report_error(stdout, status);
 		return EXIT_FAILURE;
 	}
@@ -60,7 +63,7 @@ int main (int argc, char* argv[])
 		printf("Make sure the following keys are set: NAXIS1, NAXIS2, NAXIS3\n");
 		return EXIT_FAILURE;
 	}
-	if (!silent) printf("FITS dimensions:\n\ttheta:\t%d\n\tk:\t%d\n\tnu:\t%d\n", ntheta, nk, nnu);
+	if (!par.silent) printf("FITS dimensions:\n\ttheta:\t%d\n\tk:\t%d\n\tnu:\t%d\n", ntheta, nk, nnu);
 	fits_read_key(fptr, TFLOAT, "DELTA_K", &delta_k, NULL, &status);
 	fits_read_key(fptr, TFLOAT, "DELTA_NU", &delta_nu, NULL, &status);
 	if (status)
@@ -68,11 +71,11 @@ int main (int argc, char* argv[])
 		printf("Could not find FITS keys DELTA_NU and/or DELTA_K.\n");
 		return EXIT_FAILURE;
 	}
-	if (!silent) printf("\tDELTA_NU:\t%f\n\tDELTA_K:\t%f\n", delta_nu, delta_k);
+	if (!par.silent) printf("\tDELTA_NU:\t%f\n\tDELTA_K:\t%f\n", delta_nu, delta_k);
 
 /* Allocate memory for entire FITS data cube */
-	if (!silent) printf("Allocating %ld bytes for data cube.\n", sizeof(float)*ntheta*nk*nnu);
-	if (!silent) printf("\t With %ld bytes of overhead.\n", sizeof(float*)*nk*nnu + sizeof(float**)*nnu);
+	if (!par.silent) printf("Allocating %ld bytes for data cube.\n", sizeof(float)*ntheta*nk*nnu);
+	if (!par.silent) printf("\t With %ld bytes of overhead.\n", sizeof(float*)*nk*nnu + sizeof(float**)*nnu);
 
 	pol = (float***) malloc(nnu*sizeof(float**));
 	noise = (float***) malloc(nnu*sizeof(float**));
@@ -95,7 +98,7 @@ int main (int argc, char* argv[])
 
 /* Read FITS file into array */
 	coords[0] = 1L;
-	if (!silent) printf("Reading data cube into memory.\n");
+	if (!par.silent) printf("Reading data cube into memory.\n");
 	for (coords[2]=1; coords[2]<=nnu; coords[2]++)
 	{
 		for (coords[1]=1; coords[1]<=nk; coords[1]++)
@@ -111,7 +114,7 @@ int main (int argc, char* argv[])
 	fits_close_file(fptr, &status);
 
 /* Read model file */
-	if (!silent) printf("Reading model from %s\n", argv[2]);
+	if (!par.silent) printf("Reading model from %s\n", par.modelfname);
 	numridges = (int*) malloc(nk*sizeof(int));
 	freq = (float**) malloc(nk*sizeof(float*));
 	amp = (float**) malloc(nk*sizeof(float*));
@@ -119,10 +122,10 @@ int main (int argc, char* argv[])
 	for (ii=0; ii<nk; ii++)
 		numridges[ii] = 0;
 	/* Run through once to count ridges */
-	fpmodel = fopen(argv[2], "r");
+	fpmodel = fopen(par.modelfname, "r");
 	if (fpmodel==NULL)
 	{
-		printf("ERROR: could not open model file: %s\n", argv[2]);
+		printf("ERROR: could not open model file: %s\n", par.modelfname);
 		return EXIT_FAILURE;
 	}
 	while (fscanf(fpmodel, "%d\t%e\f%e\t%e\t%e\n", &ii, &readk, &readfreq, &readamp, &readwidth) != EOF)
@@ -161,18 +164,18 @@ int main (int argc, char* argv[])
 	fclose(fpmodel);
 
 /* Pre-compute noise cube */
-	if (!silent) printf("Pre-computing noise.\n");
+	if (!par.silent) printf("Pre-computing noise.\n");
 	compute_noise_wavelet(pol, noise, nnu, nk, ntheta, (800.)/delta_nu);
 
 /* Open output file */
-	fpout = fopen(argv[3], "w");
+	fpout = fopen(par.outfname, "w");
 	if (fpout==NULL)
 	{
-		printf("ERROR: could not open output file: %s\n", argv[3]);
+		printf("ERROR: could not open output file: %s\n", par.outfname);
 		return EXIT_FAILURE;
 	}
 
-	printf("Beginning optimization.\nOutput file '%s' will be in the format:\n", argv[3]);
+	printf("Beginning optimization.\nOutput file '%s' will be in the format:\n", par.outfname);
 	printf("k-bin  k  w/k  freq  err  amp  err  width  err  ux  err uy  err\n");
 
 /* Enter loop over all k */
@@ -181,13 +184,13 @@ int main (int argc, char* argv[])
 	{
 		if (numridges[ij]>0)
 		{
-			if (!silent) printf("Starting fit of %d ridges at k=%d\n", numridges[ij], ij);
+			if (!par.silent) printf("Starting fit of %d ridges at k=%d\n", numridges[ij], ij);
 			param = (double*) malloc((numridges[ij]*7+numback)*sizeof(double));
 			bounds = malloc((numridges[ij]*7+numback)*sizeof(mp_par));
 			xerror = malloc((numridges[ij]*7+numback)*sizeof(double));
 			covar = malloc(((numridges[ij]*7+numback)*(numridges[ij]*7+numback))*sizeof(double));
 			/* Do rough fit of single peaks */
-			if (!silent) printf("\tDoing single ridge estimates.\n");
+			if (!par.silent) printf("\tDoing single ridge estimates.\n");
 			for (ii=0; ii<numridges[ij]; ii++)
 			{
 				fit_peak(&(freq[ij][ii]), &(amp[ij][ii]), &(width[ij][ii]), pol, noise, 
@@ -278,7 +281,7 @@ int main (int argc, char* argv[])
 			bounds[numridges[ij]*7+5].limits[0] = 500.0;
 			bounds[numridges[ij]*7+5].limits[1] = 10000.;
 
-			if (!silent) printf("\tFitting background at low frequency.\n");
+			if (!par.silent) printf("\tFitting background at low frequency.\n");
 			fit_back(&(param[numridges[ij]*7]), &(param[numridges[ij]*7+1]), 
 				&(param[numridges[ij]*7+2]), pol, noise, delta_nu, nnu, ntheta, ij);
 			/* Load klice struct for passing to function */
@@ -311,7 +314,7 @@ int main (int argc, char* argv[])
 			mpres->covar = covar;
 			mpreturn = 1;
 /* Perform optimization */
-			if (!silent) printf("\tDoing multifit.\n");
+			if (!par.silent) printf("\tDoing multifit.\n");
 			mpreturn = mpfit(&funk, ntheta*(subsection.end-subsection.start+1), 
 				numridges[ij]*7+numback, param, bounds, mpconf, &subsection, mpres);
 		
@@ -353,7 +356,7 @@ int main (int argc, char* argv[])
 			}
 
 			/* Output optimization details */
-			if (!silent) 
+			if (!par.silent) 
 			{
 				printf("\tStarting chi2 = %e\n", mpres->orignorm/(ntheta*(subsection.end-subsection.start)));
 				printf("\tFinal chi2 = %e\n", mpres->bestnorm/(ntheta*(subsection.end-subsection.start)));
@@ -425,7 +428,7 @@ int main (int argc, char* argv[])
 				}
 				fflush(fpout);
 			} else {
-				if (!silent) printf("\tFit deemed invalid, nothing printed to file\n");
+				if (!par.silent) printf("\tFit deemed invalid, nothing printed to file\n");
 			}
 
 			/* Free some memory for next k */
