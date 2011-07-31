@@ -1,0 +1,13 @@
+# Parameter file for cmultifit (# starts a comment)
+
+# first line is main spectrum to read
+../hmi/new_su_rsb.avgpspec_fd15.2099.+37.5.+70.0.mean.fits
+
+# second line is model file
+hmi_trunc.model
+
+# third line is the file to output to
+out
+
+# fourth is silent mode (1 = silent)
+0
