@@ -6,7 +6,12 @@
 #include <gsl/gsl_wavelet.h>
 #include "header.h"
 
-void compute_noise (float*** pol, float*** noise, int nnu, int nk, int ntheta, int radius)
+
+/* Computes gaussian smoothed spectrum in nu (azimuthally averaged) 
+	sets noise to be 0.1*(local avg)
+	radius = sigma of gaussian smoothing kernel */
+void compute_noise_smooth (float*** pol, float*** noise, 
+						int nnu, int nk, int ntheta, int radius)
 {
 	int ii, ij, ik, il;
 	float sum, ssum, weight;
@@ -36,12 +41,34 @@ void compute_noise (float*** pol, float*** noise, int nnu, int nk, int ntheta, i
 				}
 			}
 			for (ik=0; ik<ntheta; ik++)
-				noise[ii][ij][ik] = 0.0*sum/weight+0.0001;
+				noise[ii][ij][ik] = 0.1*sum/weight;
 		}
 	}
 }
 
-void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int ntheta, int radius)
+/* Computes noise to be 0.1*(average power at constant k) */
+void compute_noise_const (float*** pol, float*** noise, int nnu, int nk, int ntheta)
+{
+	int ii, ij, ik;
+	float sum;
+	for (ij=0; ij<nk; ij++)
+	{
+		sum = 0.0;
+		for (ii=0; ii<nnu; ii++)
+		{
+			for (ik=0; ik<ntheta; ik++)
+				sum += pol[ii][ij][ik];
+		}
+		sum /= 10.*(ntheta*nnu);
+		for (ii=0; ii<nnu; ii++)
+			for (ik=0; ik<ntheta; ik++)
+				noise[ii][ij][ik] = sum;
+	}
+}
+
+/* Computes noise to be stdev of reconstructed spectrum at constant (k, theta)
+	using only smallest scale wavelet components*/
+void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int ntheta)
 {
 	int ii, ij, ik, il;
 	double* data;
@@ -52,6 +79,7 @@ void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int n
 	n = powerof2(nnu);
 	data = (double*) calloc(n,sizeof(double));
 
+	/* prepare for wavelet transforms */
 	w = gsl_wavelet_alloc (gsl_wavelet_daubechies, 6);
 	work = gsl_wavelet_workspace_alloc (n);
 	
@@ -59,17 +87,22 @@ void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int n
 	{
 		for (ik=0; ik<ntheta; ik++)
 		{
+			/* fill data array with spectrum data, pad end with 0s */
 			for (ii=0; ii<nnu; ii++)
 				data[ii] = pol[ii][ij][ik];
 			for (ii=nnu; ii<n; ii++)
 				data[ii] = pol[nnu-1][ij][ik];
 
+			/* do wavelet transform */
 			gsl_wavelet_transform_forward (w, data, 1, n, work);
 			
-			for (ii=0; ii<n/4; ii++)
+			/* filter in wavelet space(?) */
+			for (ii=0; ii<n/2; ii++)
 				data[ii] = 0.0;
 			
+			/* transform back */
 			gsl_wavelet_transform_inverse (w, data, 1, n, work);
+
 			/* compute stdev */
 			for (ii=5; ii<nnu-5; ii++)
 			{
@@ -85,8 +118,9 @@ void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int n
 				noise[ii][ij][ik] = noise[nnu-6][ij][ik];
 		}
 	}
-
 	free(data);
+	gsl_wavelet_free(w);
+	gsl_wavelet_workspace_free(work);
 }
 
 unsigned int powerof2 (unsigned int n)

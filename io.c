@@ -76,7 +76,7 @@ void read_param_file (char* fname, struct params* p)
 					printf("Constant Noise\n");
 					break;
 				case NOISE_SMOOTH:
-					printf("Smooth Noise (stdev)\n");
+					printf("Smooth Noise\n");
 					break;
 				case NOISE_WAVELET:
 					printf("Wavelet Noise\n");

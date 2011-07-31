@@ -22,5 +22,4 @@ out
 # 0 = constant, set as 0.1*(global average power)
 # 1 = smoothed, set as 0.1*(local average power)
 # 2 = wavelet, uses WT to estimate noise using smallest scale fluctuations
-0
-
+2

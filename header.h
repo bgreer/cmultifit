@@ -33,8 +33,9 @@ struct params
 double model (int numridges, double nu, double k, double theta, double* p);
 int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 
-void compute_noise (float*** pol, float*** noise, int nnu, int nk, int ntheta, int radius);
-void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int ntheta, int radius);
+void compute_noise_smooth (float*** pol, float*** noise, int nnu, int nk, int ntheta, int radius);
+void compute_noise_const (float***pol, float*** noise, int nnu, int nk, int ntheta);
+void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int ntheta);
 unsigned int powerof2 (unsigned int n);
 
 int fit_peak (float *freq, float *amp, float *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k);

@@ -164,8 +164,22 @@ int main (int argc, char* argv[])
 	fclose(fpmodel);
 
 /* Pre-compute noise cube */
-	if (!par.silent) printf("Pre-computing noise.\n");
-	compute_noise_wavelet(pol, noise, nnu, nk, ntheta, (800.)/delta_nu);
+	if (par.chiweight == WEIGHT_NOISE)
+	{
+		if (!par.silent) printf("Pre-computing noise.\n");
+		switch (par.noisemode)
+		{
+			case NOISE_CONST:
+				compute_noise_const(pol, noise, nnu, nk, ntheta);
+				break;
+			case NOISE_SMOOTH:
+				compute_noise_smooth(pol, noise, nnu, nk, ntheta, (800.)/delta_nu);
+				break;
+			case NOISE_WAVELET:
+				compute_noise_wavelet(pol, noise, nnu, nk, ntheta);
+				break;
+		}
+	}
 
 /* Open output file */
 	fpout = fopen(par.outfname, "w");
