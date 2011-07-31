@@ -11,3 +11,16 @@ out
 
 # fourth is silent mode (1 = silent)
 0
+
+# fifth is chi squared weighting
+# 0 = normal (weighted by noise, see below)
+# 1 = maximum likelihood (weighted by fit value)
+#     no noise is computed, so next parameter is irrelevant
+0
+
+# sixth is noise estimator
+# 0 = constant, set as 0.1*(global average power)
+# 1 = smoothed, set as 0.1*(local average power)
+# 2 = wavelet, uses WT to estimate noise using smallest scale fluctuations
+0
+

@@ -1,6 +1,22 @@
 #include "fitsio.h"
 #include "mpfit.h"
 
+/* Set order of parameters in parameter file */
+#define PARAM_SPECTRUM (0)
+#define PARAM_MODEL (1)
+#define PARAM_OUTPUT (2)
+#define PARAM_SILENT (3)
+#define PARAM_WEIGHT (4)
+#define PARAM_NOISE (5)
+
+/* Set which values correspond to which modes */
+#define WEIGHT_NOISE (0)
+#define WEIGHT_MAXL (1)
+#define NOISE_CONST (0)
+#define NOISE_SMOOTH (1)
+#define NOISE_WAVELET (2)
+
+
 struct kslice
 {
 	float **data, **noise;
@@ -11,7 +27,7 @@ struct kslice
 struct params
 {
 	char *fitsfname, *modelfname, *outfname;
-	int silent;
+	int silent, chiweight, noisemode;
 };
 
 double model (int numridges, double nu, double k, double theta, double* p);
