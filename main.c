@@ -295,6 +295,7 @@ int main (int argc, char* argv[])
 			bounds[numridges[ij]*7+5].limits[0] = 500.0;
 			bounds[numridges[ij]*7+5].limits[1] = 10000.;
 
+			subsection.par = &par;
 			if (!par.silent) printf("\tFitting background at low frequency.\n");
 			fit_back(&(param[numridges[ij]*7]), &(param[numridges[ij]*7+1]), 
 				&(param[numridges[ij]*7+2]), pol, noise, delta_nu, nnu, ntheta, ij);
@@ -504,15 +505,20 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 					den = w1 + akt*(p[ik*7+3]*cos(tht)+p[ik*7+4]*sin(tht))/twopi - p[ik*7];
 					den = den*den + p[ik*7+2]*p[ik*7+2]/4.0;
 					x2 = (p[ik*7+1]+p[ik*7+5]*cos(2.0*tht-p[ik*7+6]))*p[ik*7+2]/(2.0*den);
-					/*x2 += p[ik*7+5]*cos(tht-p[ik*7+6]);*/
 					deviates[num] += x2;
 				}
-/*				deviates[num] = ((deviates[num] + back) - sub->data[iw-istw][itht]);
-				deviates[num] /= sub->noise[iw-istw][itht];
-*/
-				deviates[num] = sub->data[iw-istw][itht]/(deviates[num]+back);
-				deviates[num] -= log(deviates[num]);
-
+				/* Weight Chi appropriately */
+				switch (sub->par->chiweight)
+				{
+					case WEIGHT_NOISE:
+						deviates[num] = ((deviates[num] + back) - sub->data[iw-istw][itht]);
+						deviates[num] /= sub->noise[iw-istw][itht];
+						break;
+					case WEIGHT_MAXL:
+						deviates[num] = sub->data[iw-istw][itht]/(deviates[num]+back);
+						deviates[num] -= log(deviates[num]);
+						break;
+				}
 			}
 			num++;
 		}

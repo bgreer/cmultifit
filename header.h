@@ -22,6 +22,7 @@ struct kslice
 	float **data, **noise;
 	int start, end, ntheta;
 	float delta_nu, k;
+	struct params* par;
 };
 
 struct params
