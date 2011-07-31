@@ -6,7 +6,7 @@
 
 void usage (char* name)
 {
-	printf("Usage:\n%s spectrum model output\n", name);
+	printf("Usage: \n%s spectrum model output\n", name);
 }
 
 int main (int argc, char* argv[])
