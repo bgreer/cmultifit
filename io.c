@@ -94,7 +94,7 @@ void read_param_file (char* fname, struct params* p)
 {
 	FILE *fp;
 	char buffer[200];
-	int index;
+	int index, ii;
 
 	fp = fopen(fname, "r");
 	if (fp==NULL)
@@ -134,6 +134,15 @@ void read_param_file (char* fname, struct params* p)
 					break;
 				case PARAM_NOISE: /* noise mode */
 					p->noisemode = atoi(buffer);
+					break;
+				case PARAM_KRANGE:
+					/* split string by putting null-terminator where the space is */
+					ii=0;
+					while (ii<strlen(buffer) && buffer[ii]!=' ')
+						ii++;
+					buffer[ii] = 0;
+					p->kstart = atoi(buffer);
+					p->kend = atoi(buffer+ii+1); /* pointer arithmetic */
 					break;
 			}
 			index++;

@@ -1,6 +1,9 @@
 #include "fitsio.h"
 #include "mpfit.h"
 
+#define NPEAK (7) /* number of parameters for each peak */
+#define NBACK (6) /* number of parameters for background terms */
+
 /* Set order of parameters in parameter file */
 #define PARAM_SPECTRUM (0)
 #define PARAM_MODEL (1)
@@ -8,6 +11,7 @@
 #define PARAM_SILENT (3)
 #define PARAM_WEIGHT (4)
 #define PARAM_NOISE (5)
+#define PARAM_KRANGE (6)
 
 /* Set which values correspond to which modes */
 #define WEIGHT_NOISE (0)
@@ -29,6 +33,7 @@ struct params
 {
 	char *fitsfname, *modelfname, *outfname;
 	int silent, chiweight, noisemode;
+	int kstart, kend;
 };
 
 /* main.c */

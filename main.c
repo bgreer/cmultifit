@@ -11,20 +11,18 @@ void usage (char* name)
 
 int main (int argc, char* argv[])
 {
-	fitsfile *fptr;
 	FILE *fpmodel, *fpout, *fpdebug;
 	struct params par;
 	int status = 0;
 	int ii, ij, ik;
 	int ntheta, nk, nnu;
 	float delta_nu, delta_k;
-	float ***pol, *buff, ***noise;
-	long coords[3];
+	float ***pol, ***noise;
 	float **freq, **amp, **width;
 	float readfreq, readamp, readwidth, readk;
 	int *numridges;
 
-	int mpreturn, index, numback;
+	int mpreturn, index;
 	struct kslice subsection;
 	double* param;
 	mp_result *mpres;
@@ -43,10 +41,12 @@ int main (int argc, char* argv[])
 
 	/* Read param file and set run parameters */
 	read_param_file(argv[1], &par);
-	numback = 6;
 
-/* Open FITS file and read keys */
-	read_fits_file(&pol, &noise, &par, &ntheta, &nk, &nnu, &delta_k, &delta_nu);
+	/* Open FITS file and read keys */
+	if (read_fits_file(&pol, &noise, &par, &ntheta, &nk, &nnu, &delta_k, &delta_nu)==EXIT_FAILURE)
+		return EXIT_FAILURE;
+
+	/* TODO: Check kstart and kend */
 
 /* Read model file */
 	if (!par.silent) printf("Reading model from %s\n", par.modelfname);
@@ -124,19 +124,18 @@ int main (int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 
-	printf("\nBeginning optimization, output file '%s'\n", par.outfname);
+	if (!par.silent) printf("\nBeginning optimization, output file '%s'\n", par.outfname);
 
 /* Enter loop over all k */
-/*	for (ij=0; ij<nk; ij++)*/
-	ij = 14;
+	for (ij=par.kstart; ij<=par.kend; ij++)
 	{
 		if (numridges[ij]>0)
 		{
 			if (!par.silent) printf("Starting fit of %d ridges at k=%d\n", numridges[ij], ij);
-			param = (double*) malloc((numridges[ij]*7+numback)*sizeof(double));
-			bounds = malloc((numridges[ij]*7+numback)*sizeof(mp_par));
-			xerror = malloc((numridges[ij]*7+numback)*sizeof(double));
-			covar = malloc(((numridges[ij]*7+numback)*(numridges[ij]*7+numback))*sizeof(double));
+			param = (double*) malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double));
+			bounds = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(mp_par));
+			xerror = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double));
+			covar = malloc(((numridges[ij]*NPEAK+NBACK)*(numridges[ij]*NPEAK+NBACK))*sizeof(double));
 			/* Do rough fit of single peaks */
 			if (!par.silent) printf("\tDoing single ridge estimates.\n");
 			for (ii=0; ii<numridges[ij]; ii++)
@@ -147,97 +146,100 @@ int main (int argc, char* argv[])
 
 			for (ii=0; ii<numridges[ij]; ii++)
 			{
-				for (ik=0; ik<7; ik++)
+				for (ik=0; ik<NPEAK; ik++)
 				{
-					bounds[ii*7+ik].fixed = 0;
-					bounds[ii*7+ik].side = 0;
-					bounds[ii*7+ik].deriv_debug = 0;
-					bounds[ii*7+ik].relstep = 0.0;
-					bounds[ii*7+ik].step = 0.0;
+					bounds[ii*NPEAK+ik].fixed = 0;
+					bounds[ii*NPEAK+ik].side = 0;
+					bounds[ii*NPEAK+ik].deriv_debug = 0;
+					bounds[ii*NPEAK+ik].relstep = 0.0;
+					bounds[ii*NPEAK+ik].step = 0.0;
 				}
 
 				/* set frequency */
-				param[ii*7] = freq[ij][ii];
-				bounds[ii*7].limited[0] = bounds[ii*7].limited[1] = 1;
+				param[ii*NPEAK] = freq[ij][ii];
+				bounds[ii*NPEAK].limited[0] = bounds[ii*NPEAK].limited[1] = 1;
 				if (ii==0)
-					bounds[ii*7].limits[0] = 0.0;
+					bounds[ii*NPEAK].limits[0] = 0.0;
 				else 
-					bounds[ii*7].limits[0] = 0.5*(freq[ij][ii] + freq[ij][ii-1]);
+					bounds[ii*NPEAK].limits[0] = 0.5*(freq[ij][ii] + freq[ij][ii-1]);
 				if (ii==numridges[ij]-1)
-					bounds[ii*7].limits[1] = nnu*delta_nu;
+					bounds[ii*NPEAK].limits[1] = nnu*delta_nu;
 				else
-					bounds[ii*7].limits[1] = 0.5*(freq[ij][ii] + freq[ij][ii+1]);
+					bounds[ii*NPEAK].limits[1] = 0.5*(freq[ij][ii] + freq[ij][ii+1]);
 
 				/* set amplitude */
-				param[ii*7+1] = amp[ij][ii];
-				bounds[ii*7+1].limited[0] = 1;
-				bounds[ii*7+1].limited[1] = 0;
-				bounds[ii*7+1].limits[0] = 0.0; /* dont go below 0 */
+				param[ii*NPEAK+1] = amp[ij][ii];
+				bounds[ii*NPEAK+1].limited[0] = 1;
+				bounds[ii*NPEAK+1].limited[1] = 0;
+				bounds[ii*NPEAK+1].limits[0] = 0.0; /* dont go below 0 */
 
 				/* set width */
-				param[ii*7+2] = width[ij][ii];
-				bounds[ii*7+2].limited[0] = bounds[ii*7+2].limited[1] = 1;
-				bounds[ii*7+2].limits[0] = width[ij][ii]/4.0;
-				bounds[ii*7+2].limits[1] = width[ij][ii]*4.0;
+				param[ii*NPEAK+2] = width[ij][ii];
+				bounds[ii*NPEAK+2].limited[0] = bounds[ii*NPEAK+2].limited[1] = 1;
+				bounds[ii*NPEAK+2].limits[0] = width[ij][ii]/4.0;
+				bounds[ii*NPEAK+2].limits[1] = width[ij][ii]*4.0;
 
 				/* set velocities */
-				param[ii*7+3] = 1.0;
-				bounds[ii*7+3].limited[0] = bounds[ii*7+3].limited[1] = 1;
-				bounds[ii*7+3].limits[0] = -1000.0;
-				bounds[ii*7+3].limits[1] = 1000.0;
-				param[ii*7+4] = 1.0;
-				bounds[ii*7+4].limited[0] = bounds[ii*7+4].limited[1] = 1;
-				bounds[ii*7+4].limits[0] = -1000.0;
-				bounds[ii*7+4].limits[1] = 1000.0;
+				param[ii*NPEAK+3] = 1.0;
+				bounds[ii*NPEAK+3].limited[0] = bounds[ii*NPEAK+3].limited[1] = 1;
+				bounds[ii*NPEAK+3].limits[0] = -1000.0;
+				bounds[ii*NPEAK+3].limits[1] = 1000.0;
+				param[ii*NPEAK+4] = 1.0;
+				bounds[ii*NPEAK+4].limited[0] = bounds[ii*NPEAK+4].limited[1] = 1;
+				bounds[ii*NPEAK+4].limits[0] = -1000.0;
+				bounds[ii*NPEAK+4].limits[1] = 1000.0;
 
 				/* set theta variation params */
-				param[ii*7+5] = 0.0;
-				bounds[ii*7+5].limited[0] = 0;
-				bounds[ii*7+5].limited[1] = 0;
-				param[ii*7+6] = 0.0;
-				bounds[ii*7+6].limited[0] = bounds[ii*7+6].limited[1] = 0;
+				param[ii*NPEAK+5] = 0.0;
+				bounds[ii*NPEAK+5].limited[0] = 0;
+				bounds[ii*NPEAK+5].limited[1] = 0;
+				param[ii*NPEAK+6] = 0.0;
+				bounds[ii*NPEAK+6].limited[0] = bounds[ii*NPEAK+6].limited[1] = 0;
 			}
-			for (ii=0; ii<numback; ii++)
+			for (ii=0; ii<NBACK; ii++)
 			{
-				bounds[numridges[ij]*7+ii].fixed = 0;
-				bounds[numridges[ij]*7+ii].side = 0;
-				bounds[numridges[ij]*7+ii].deriv_debug = 0;
-				bounds[numridges[ij]*7+ii].relstep = 0.0;
-				bounds[numridges[ij]*7+ii].step = 0.0;
+				bounds[numridges[ij]*NPEAK+ii].fixed = 0;
+				bounds[numridges[ij]*NPEAK+ii].side = 0;
+				bounds[numridges[ij]*NPEAK+ii].deriv_debug = 0;
+				bounds[numridges[ij]*NPEAK+ii].relstep = 0.0;
+				bounds[numridges[ij]*NPEAK+ii].step = 0.0;
 			}
-			param[numridges[ij]*7] = 0.5;
-			bounds[numridges[ij]*7].limited[0] = 1;
-			bounds[numridges[ij]*7].limited[1] = 0;
-			bounds[numridges[ij]*7].limits[0] = 0.0;
-			param[numridges[ij]*7+1] = 0.0033;
-			bounds[numridges[ij]*7+1].limited[0] = bounds[numridges[ij]*7+1].limited[1] = 0;
-			param[numridges[ij]*7+2] = 2.5;
-			bounds[numridges[ij]*7+2].limited[0] = 1;
-			bounds[numridges[ij]*7+2].limited[1] = 0;
-			bounds[numridges[ij]*7+2].limits[0] = 0.0;
+			param[numridges[ij]*NPEAK] = 0.5;
+			bounds[numridges[ij]*NPEAK].limited[0] = 1;
+			bounds[numridges[ij]*NPEAK].limited[1] = 0;
+			bounds[numridges[ij]*NPEAK].limits[0] = 0.0;
+			param[numridges[ij]*NPEAK+1] = 0.0033;
+			bounds[numridges[ij]*NPEAK+1].limited[0] = bounds[numridges[ij]*NPEAK+1].limited[1] = 0;
+			param[numridges[ij]*NPEAK+2] = 2.5;
+			bounds[numridges[ij]*NPEAK+2].limited[0] = 1;
+			bounds[numridges[ij]*NPEAK+2].limited[1] = 0;
+			bounds[numridges[ij]*NPEAK+2].limits[0] = 0.0;
 
-			param[numridges[ij]*7+3] = 2.;	
-			bounds[numridges[ij]*7+3].limited[0] = 1;
-			bounds[numridges[ij]*7+3].limited[1] = 0;
-			bounds[numridges[ij]*7+3].limits[0] = 0.0;
-			param[numridges[ij]*7+4] = 2000.;
-			bounds[numridges[ij]*7+4].limited[0] = bounds[numridges[ij]*7+4].limited[1] = 1;
-			bounds[numridges[ij]*7+4].limits[0] = 200.;
-			bounds[numridges[ij]*7+4].limits[1] = nnu*delta_nu;
-			param[numridges[ij]*7+5] = 1000.;
-			bounds[numridges[ij]*7+5].limited[0] = bounds[numridges[ij]*7+5].limited[1] = 1;
-			bounds[numridges[ij]*7+5].limits[0] = 500.0;
-			bounds[numridges[ij]*7+5].limits[1] = 10000.;
+			param[numridges[ij]*NPEAK+3] = 2.;	
+			bounds[numridges[ij]*NPEAK+3].limited[0] = 1;
+			bounds[numridges[ij]*NPEAK+3].limited[1] = 0;
+			bounds[numridges[ij]*NPEAK+3].limits[0] = 0.0;
+			param[numridges[ij]*NPEAK+4] = 2000.;
+			bounds[numridges[ij]*NPEAK+4].limited[0] = bounds[numridges[ij]*NPEAK+4].limited[1] = 1;
+			bounds[numridges[ij]*NPEAK+4].limits[0] = 200.;
+			bounds[numridges[ij]*NPEAK+4].limits[1] = nnu*delta_nu;
+			param[numridges[ij]*NPEAK+5] = 1000.;
+			bounds[numridges[ij]*NPEAK+5].limited[0] = bounds[numridges[ij]*NPEAK+5].limited[1] = 1;
+			bounds[numridges[ij]*NPEAK+5].limits[0] = 500.0;
+			bounds[numridges[ij]*NPEAK+5].limits[1] = 10000.;
 
 			subsection.par = &par;
 			if (!par.silent) printf("\tFitting background at low frequency.\n");
-			fit_back(&(param[numridges[ij]*7]), &(param[numridges[ij]*7+1]), 
-				&(param[numridges[ij]*7+2]), pol, noise, delta_nu, nnu, ntheta, ij);
+			fit_back(&(param[numridges[ij]*NPEAK]), &(param[numridges[ij]*NPEAK+1]), 
+				&(param[numridges[ij]*NPEAK+2]), pol, noise, delta_nu, nnu, ntheta, ij);
 			/* Load klice struct for passing to function */
 			subsection.start = 0;
 			if (subsection.start < 0) subsection.start = 0;
-			subsection.end = (param[(numridges[ij]-1)*7]+1.*param[(numridges[ij]-1)*7+2])/delta_nu;
+			
+			subsection.end = (param[(numridges[ij]-1)*NPEAK]+1.*param[(numridges[ij]-1)*NPEAK+2])
+								/delta_nu;
 			if (subsection.end > nnu-1) subsection.end = nnu-1;
+
 			subsection.delta_nu = delta_nu;
 			subsection.ntheta = ntheta;
 			subsection.k = (ij+1)*delta_k;
@@ -264,8 +266,15 @@ int main (int argc, char* argv[])
 			mpreturn = 1;
 /* Perform optimization */
 			if (!par.silent) printf("\tDoing multifit.\n");
-			mpreturn = mpfit(&funk, ntheta*(subsection.end-subsection.start+1), 
-				numridges[ij]*7+numback, param, bounds, mpconf, &subsection, mpres);
+
+			mpreturn = mpfit(&funk, 
+					ntheta*(subsection.end-subsection.start+1), 
+					numridges[ij]*NPEAK+NBACK, 
+					param, 
+					bounds, 
+					mpconf, 
+					&subsection, 
+					mpres);
 		
 			/* Check return value of mpfit */
 			switch (mpreturn)
@@ -314,8 +323,8 @@ int main (int argc, char* argv[])
 				printf("\tNumber of pegged parameters = %d\n", mpres->npegged);
 			}
 
-			for (ii=0; ii<numback; ii++)
-				printf("%f\n", param[numridges[ij]*7+ii]);
+			for (ii=0; ii<NBACK; ii++)
+				printf("%f\n", param[numridges[ij]*NPEAK+ii]);
 
 			fpdebug = fopen("debug", "w");
 			for (ii=0; ii<nnu; ii++)
@@ -328,22 +337,23 @@ int main (int argc, char* argv[])
 					sum3 = noise[ii][ij][ik]/1.0;
 				
 				fprintf(fpdebug, "%f\t%e\t%e\t%e\t%e\t%e\n", ii*delta_nu, sum2, sum, 
-					param[numridges[ij]*7]/(1.+pow(ii*delta_nu*param[numridges[ij]*7+1],
-						param[numridges[ij]*7+2])), 
-					param[numridges[ij]*7+3]*param[numridges[ij]*7+5]/
-						(pow(ii*delta_nu-param[numridges[ij]*7+4], 2.) + 
-							pow(0.5*param[numridges[ij]*7+5],2.)), 
+					param[numridges[ij]*NPEAK]/(1.+pow(ii*delta_nu*param[numridges[ij]*NPEAK+1],
+						param[numridges[ij]*NPEAK+2])), 
+					param[numridges[ij]*NPEAK+3]*param[numridges[ij]*NPEAK+5]/
+						(pow(ii*delta_nu-param[numridges[ij]*NPEAK+4], 2.) + 
+							pow(0.5*param[numridges[ij]*NPEAK+5],2.)), 
 					sum3);
 				}
 				fprintf(fpdebug, "");
 			}
 			fclose(fpdebug);
 
-			for (ii=0; ii<numridges[ij]*7+numback; ii++)
+			for (ii=0; ii<numridges[ij]*NPEAK+NBACK; ii++)
 			{
-				for (ik=0; ik<numridges[ij]*7+numback; ik++)
+				for (ik=0; ik<numridges[ij]*NPEAK+NBACK; ik++)
 				{
-					printf("%d\t%d\t%e\n", ii, ik, log10(fabs(covar[ii*(numridges[ij]*7+numback)+ik]+1e-7)));
+					printf("%d\t%d\t%e\n", ii, ik, 
+						log10(fabs(covar[ii*(numridges[ij]*NPEAK+NBACK)+ik]+1e-7)));
 				}
 				printf("\n");
 			}
@@ -353,26 +363,26 @@ int main (int argc, char* argv[])
 			{
 				for (ii=0; ii<numridges[ij]; ii++)
 				{
-					if (param[ii*7+2] > 7.5 && param[ii*7+2] < 665. && 
-							abs(param[ii*7]-freq[ij][ii])/freq[ij][ii] < 0.2 && 
-							param[ii*7+3] < 900. && param[ii*7+4] < 900. &&
-							xerror[ii*7]>0.0 && xerror[ii*7+1]>0.0 && xerror[ii*7+2]>0.0 && 
-							xerror[ii*7+3]>0.0 && xerror[ii*7+4]>0.0)
+					if (param[ii*NPEAK+2] > 7.5 && param[ii*NPEAK+2] < 665. && 
+							abs(param[ii*NPEAK]-freq[ij][ii])/freq[ij][ii] < 0.2 && 
+							param[ii*NPEAK+3] < 900. && param[ii*NPEAK+4] < 900. &&
+							xerror[ii*NPEAK]>0.0 && xerror[ii*NPEAK+1]>0.0 && xerror[ii*NPEAK+2]>0.0 && 
+							xerror[ii*NPEAK+3]>0.0 && xerror[ii*NPEAK+4]>0.0)
 					{
 						fprintf(fpout, "%d\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\n", 
 							ij, 
 							ij*delta_k,
-							param[ii*7]/(ij*delta_k), 
-							param[ii*7], xerror[ii*7+3], 
-							param[ii*7+1], xerror[ii*7+1], 
-							param[ii*7+2], xerror[ii*7+2], 
-							param[ii*7+3], xerror[ii*7+3], 
-							param[ii*7+4], xerror[ii*7+4],
-							param[ii*7+5], xerror[ii*7+5], 
-							param[ii*7+6], xerror[ii*7+6]
+							param[ii*NPEAK]/(ij*delta_k), 
+							param[ii*NPEAK], xerror[ii*NPEAK+3], 
+							param[ii*NPEAK+1], xerror[ii*NPEAK+1], 
+							param[ii*NPEAK+2], xerror[ii*NPEAK+2], 
+							param[ii*NPEAK+3], xerror[ii*NPEAK+3], 
+							param[ii*NPEAK+4], xerror[ii*NPEAK+4],
+							param[ii*NPEAK+5], xerror[ii*NPEAK+5], 
+							param[ii*NPEAK+6], xerror[ii*NPEAK+6]
 							);
 					} else {
-						printf("\tLine at %f deemed invalid\n", param[ii*7]);
+						printf("\tLine at %f deemed invalid\n", param[ii*NPEAK]);
 					}
 				}
 				fflush(fpout);
@@ -399,12 +409,12 @@ double model (int numridges, double nu, double k, double theta, double* p)
 	ret = 0.0;
 	for (ii=0; ii<numridges; ii++)
 	{
-		den = nu + k*(p[ii*7+3]*cos(theta)+p[ii*7+4]*sin(theta))/6.28318531 - p[ii*7];
-		den = den*den + p[ii*7+2]*p[ii*7+2]/4.0;
-		ret += p[ii*7+1]*p[ii*7+2]/(2.0*den);
+		den = nu + k*(p[ii*NPEAK+3]*cos(theta)+p[ii*NPEAK+4]*sin(theta))/6.28318531 - p[ii*NPEAK];
+		den = den*den + p[ii*NPEAK+2]*p[ii*NPEAK+2]/4.0;
+		ret += p[ii*NPEAK+1]*p[ii*NPEAK+2]/(2.0*den);
 	}
-	ret += p[numridges*7]/(1.0 + pow(nu*p[numridges*7+1], p[numridges*7+2]));
-	ret += p[numridges*7+3]*p[numridges*7+5]/(pow(nu-p[numridges*7+4],2.) + pow(0.5*p[numridges*7+5],2.));
+	ret += p[numridges*NPEAK]/(1.0 + pow(nu*p[numridges*NPEAK+1], p[numridges*NPEAK+2]));
+	ret += p[numridges*NPEAK+3]*p[numridges*NPEAK+5]/(pow(nu-p[numridges*NPEAK+4],2.) + pow(0.5*p[numridges*NPEAK+5],2.));
 /*	ret += p[numridges*5+3]*p[numridges*5+5]/((nu-p[numridges*5+4])*(nu-p[numridges*5+4])+p[numridges*5+5]*p[numridges*5+5]/4.);
 */	return ret;
 }
@@ -434,11 +444,11 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 			deviates[num] = 0.0;
 			if (sub->data[iw-istw][itht] > 0.0 && !isnan(sub->data[iw-istw][itht]))
 			{
-				for (ik=0; ik<n/7; ik++)
+				for (ik=0; ik<n/NPEAK; ik++)
 				{
-					den = w1 + akt*(p[ik*7+3]*cos(tht)+p[ik*7+4]*sin(tht))/twopi - p[ik*7];
-					den = den*den + p[ik*7+2]*p[ik*7+2]/4.0;
-					x2 = (p[ik*7+1]+p[ik*7+5]*cos(2.0*tht-p[ik*7+6]))*p[ik*7+2]/(2.0*den);
+					den = w1 + akt*(p[ik*NPEAK+3]*cos(tht)+p[ik*NPEAK+4]*sin(tht))/twopi - p[ik*NPEAK];
+					den = den*den + p[ik*NPEAK+2]*p[ik*NPEAK+2]/4.0;
+					x2 = (p[ik*NPEAK+1]+p[ik*NPEAK+5]*cos(2.0*tht-p[ik*NPEAK+6]))*p[ik*NPEAK+2]/(2.0*den);
 					deviates[num] += x2;
 				}
 				/* Weight Chi appropriately */

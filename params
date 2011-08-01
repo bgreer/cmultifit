@@ -23,3 +23,7 @@ out
 # 1 = smoothed, set as 0.1*(local average power)
 # 2 = wavelet, uses WT to estimate noise using smallest scale fluctuations
 2
+
+# seventh is k-range for fitting, space separated
+# values outside range of spectrum are cropped to ends
+14 14
