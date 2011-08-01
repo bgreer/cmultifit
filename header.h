@@ -31,18 +31,24 @@ struct params
 	int silent, chiweight, noisemode;
 };
 
+/* main.c */
 double model (int numridges, double nu, double k, double theta, double* p);
 int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 
+/* noise.c */
 void compute_noise_smooth (float*** pol, float*** noise, int nnu, int nk, int ntheta, int radius);
 void compute_noise_const (float***pol, float*** noise, int nnu, int nk, int ntheta);
 void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int ntheta);
 unsigned int powerof2 (unsigned int n);
 
+/* fit.c */
 int fit_peak (float *freq, float *amp, float *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k);
 int funk_single(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 int fit_back (double* amp, double* cutoff, double* power, float*** pol, float*** noise, float delta_nu, int nnu, int ntheta, int k);
 int funk_back(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 
+/* io.c */
+int read_fits_file (float**** spec, float**** noise, struct params* p, 
+		int* ntheta, int* nk, int* nnu, float* delta_k, float* delta_nu);
 void read_param_file (char* fname, struct params* p);
 void trim (char* str);

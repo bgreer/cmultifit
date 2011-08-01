@@ -78,11 +78,10 @@ void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int n
 
 	n = powerof2(nnu);
 	data = (double*) calloc(n,sizeof(double));
-
+	
 	/* prepare for wavelet transforms */
 	w = gsl_wavelet_alloc (gsl_wavelet_daubechies, 6);
 	work = gsl_wavelet_workspace_alloc (n);
-	
 	for (ij=0; ij<nk; ij++)
 	{
 		for (ik=0; ik<ntheta; ik++)
@@ -123,6 +122,9 @@ void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int n
 	gsl_wavelet_workspace_free(work);
 }
 
+/* Wavelet transform requires data to be 2^m length
+	this determines next highest 2^m >= n
+	bit-shifting makes code look more legit than it is */
 unsigned int powerof2 (unsigned int n)
 {
 	int m = 0;

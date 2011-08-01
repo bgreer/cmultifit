@@ -46,72 +46,7 @@ int main (int argc, char* argv[])
 	numback = 6;
 
 /* Open FITS file and read keys */
-	if (!par.silent) printf("Reading FITS file: %s\n", par.fitsfname);
-	fits_open_file(&fptr, par.fitsfname, READONLY, &status);
-	if (status)
-	{
-		printf("Error opening FITS file: %s\n", par.fitsfname);
-		fits_report_error(stdout, status);
-		return EXIT_FAILURE;
-	}
-	fits_read_key(fptr, TINT, "NAXIS1", &ntheta, NULL, &status);
-	fits_read_key(fptr, TINT, "NAXIS2", &nk, NULL, &status);
-	fits_read_key(fptr, TINT, "NAXIS3", &nnu, NULL, &status);
-	if (status)
-	{
-		printf("Could not find FITS dimensions.\n");
-		printf("Make sure the following keys are set: NAXIS1, NAXIS2, NAXIS3\n");
-		return EXIT_FAILURE;
-	}
-	if (!par.silent) printf("FITS dimensions:\n\ttheta:\t%d\n\tk:\t%d\n\tnu:\t%d\n", ntheta, nk, nnu);
-	fits_read_key(fptr, TFLOAT, "DELTA_K", &delta_k, NULL, &status);
-	fits_read_key(fptr, TFLOAT, "DELTA_NU", &delta_nu, NULL, &status);
-	if (status)
-	{
-		printf("Could not find FITS keys DELTA_NU and/or DELTA_K.\n");
-		return EXIT_FAILURE;
-	}
-	if (!par.silent) printf("\tDELTA_NU:\t%f\n\tDELTA_K:\t%f\n", delta_nu, delta_k);
-
-/* Allocate memory for entire FITS data cube */
-	if (!par.silent) printf("Allocating %ld bytes for data cube.\n", sizeof(float)*ntheta*nk*nnu);
-	if (!par.silent) printf("\t With %ld bytes of overhead.\n", sizeof(float*)*nk*nnu + sizeof(float**)*nnu);
-
-	pol = (float***) malloc(nnu*sizeof(float**));
-	noise = (float***) malloc(nnu*sizeof(float**));
-	for (ii=0; ii<nnu; ii++)
-	{
-		pol[ii] = (float**) malloc(nk*sizeof(float*));
-		noise[ii] = (float**) malloc(nk*sizeof(float*));
-		for (ij=0; ij<nk; ij++)
-		{
-			pol[ii][ij] = (float*) malloc(ntheta*sizeof(float));
-			noise[ii][ij] = (float*) malloc(ntheta*sizeof(float));
-			if (pol[ii][ij]==NULL)
-			{
-				printf("Error allocating memory.\n");
-				return EXIT_FAILURE;
-			}
-		}
-	}
-	buff = (float*) malloc(ntheta*sizeof(float));
-
-/* Read FITS file into array */
-	coords[0] = 1L;
-	if (!par.silent) printf("Reading data cube into memory.\n");
-	for (coords[2]=1; coords[2]<=nnu; coords[2]++)
-	{
-		for (coords[1]=1; coords[1]<=nk; coords[1]++)
-		{
-			fits_read_pix(fptr, TFLOAT, coords, ntheta, NULL, buff, NULL, &status);
-			for (ik=0; ik<ntheta; ik++)
-			{
-				if (buff[ik] < 0.0 || isnan(buff[ik])) buff[ik] = 0.0;
-			}
-			memcpy(pol[coords[2]-1][coords[1]-1], buff, ntheta*sizeof(float));
-		}
-	}
-	fits_close_file(fptr, &status);
+	read_fits_file(&pol, &noise, &par, &ntheta, &nk, &nnu, &delta_k, &delta_nu);
 
 /* Read model file */
 	if (!par.silent) printf("Reading model from %s\n", par.modelfname);
@@ -189,8 +124,7 @@ int main (int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 
-	printf("Beginning optimization.\nOutput file '%s' will be in the format:\n", par.outfname);
-	printf("k-bin  k  w/k  freq  err  amp  err  width  err  ux  err uy  err\n");
+	printf("\nBeginning optimization, output file '%s'\n", par.outfname);
 
 /* Enter loop over all k */
 /*	for (ij=0; ij<nk; ij++)*/
