@@ -12,6 +12,12 @@
 #define PARAM_WEIGHT (4)
 #define PARAM_NOISE (5)
 #define PARAM_KRANGE (6)
+#define PARAM_FTOL (7)
+#define PARAM_XTOL (8)
+#define PARAM_GTOL (9)
+#define PARAM_NITER (10)
+#define PARAM_DEBUG (11)
+#define PARAM_COVAR (12)
 
 /* Set which values correspond to which modes */
 #define WEIGHT_NOISE (0)
@@ -34,6 +40,9 @@ struct params
 	char *fitsfname, *modelfname, *outfname;
 	int silent, chiweight, noisemode;
 	int kstart, kend;
+	double ftol, xtol, gtol;
+	int niter;
+	char *debugfname, *covarfname;
 };
 
 /* main.c */
@@ -53,6 +62,8 @@ int fit_back (double* amp, double* cutoff, double* power, float*** pol, float***
 int funk_back(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 
 /* io.c */
+void output_debug (struct params* p);
+void output_covar (double* covar, int n, struct params* p);
 int read_fits_file (float**** spec, float**** noise, struct params* p, 
 		int* ntheta, int* nk, int* nnu, float* delta_k, float* delta_nu);
 void read_param_file (char* fname, struct params* p);

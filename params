@@ -27,3 +27,44 @@ out
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
 14 14
+
+
+# Next are parameters for fit convergence
+
+# Relative chi-square convergence criterium
+1e-8
+
+# Relative parameter convergence criterium
+1e-4
+
+# Orthogonality convergence criterium
+1e-8
+
+# Max number of iterations.
+# If this number is hit before convergence, fit is deemed invalid
+200
+
+
+# Next are filenames for debug output. Fair warning, they produce a lot of data
+
+# Fit output. Set to 0 for no output
+# After each successful multifit, outputs fit result
+# Format (8 columns):
+# theta	k	nu	data	fit	noise	background	residual
+debug
+
+# Covariance output. Set to 0 for no output
+# After each successful multifit, outputs log10 of covariance matrix
+# If set to 'file', output files will be 'file_##', where ## is the k-bin
+# Format (3 columns):
+# i	j	log10(abs(cov(i,j)))
+covar
+# To easily plot, use gnuplot:
+# set pm3d map
+# splot 'covar'
+
+# Background output. Set to 0 for no output
+# After each successful multifit, outputs final parameters of background terms
+# Format (8 columns):
+# k-bin	k	par0	par1	par2	par3	par4	par5
+0

@@ -135,7 +135,8 @@ int main (int argc, char* argv[])
 			param = (double*) malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double));
 			bounds = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(mp_par));
 			xerror = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double));
-			covar = malloc(((numridges[ij]*NPEAK+NBACK)*(numridges[ij]*NPEAK+NBACK))*sizeof(double));
+			if (par.covarfname)
+				covar = malloc(((numridges[ij]*NPEAK+NBACK)*(numridges[ij]*NPEAK+NBACK))*sizeof(double));
 			/* Do rough fit of single peaks */
 			if (!par.silent) printf("\tDoing single ridge estimates.\n");
 			for (ii=0; ii<numridges[ij]; ii++)
@@ -262,7 +263,7 @@ int main (int argc, char* argv[])
 			mpconf->nofinitecheck = 1;
 
 			mpres->xerror = xerror;
-			mpres->covar = covar;
+			if (par.covarfname) mpres->covar = covar;
 			mpreturn = 1;
 /* Perform optimization */
 			if (!par.silent) printf("\tDoing multifit.\n");
@@ -326,37 +327,11 @@ int main (int argc, char* argv[])
 			for (ii=0; ii<NBACK; ii++)
 				printf("%f\n", param[numridges[ij]*NPEAK+ii]);
 
-			fpdebug = fopen("debug", "w");
-			for (ii=0; ii<nnu; ii++)
-			{
-				sum = sum2 = sum3 = 0.0;
-				for (ik=0; ik<1; ik++)
-				{
-					sum = model(numridges[ij], ii*delta_nu, ij*delta_k, 6.28318531*(ik+1)/ntheta, param)/1.0;
-					sum2 = pol[ii][ij][ik]/1.0;
-					sum3 = noise[ii][ij][ik]/1.0;
-				
-				fprintf(fpdebug, "%f\t%e\t%e\t%e\t%e\t%e\n", ii*delta_nu, sum2, sum, 
-					param[numridges[ij]*NPEAK]/(1.+pow(ii*delta_nu*param[numridges[ij]*NPEAK+1],
-						param[numridges[ij]*NPEAK+2])), 
-					param[numridges[ij]*NPEAK+3]*param[numridges[ij]*NPEAK+5]/
-						(pow(ii*delta_nu-param[numridges[ij]*NPEAK+4], 2.) + 
-							pow(0.5*param[numridges[ij]*NPEAK+5],2.)), 
-					sum3);
-				}
-				fprintf(fpdebug, "");
-			}
-			fclose(fpdebug);
-
-			for (ii=0; ii<numridges[ij]*NPEAK+NBACK; ii++)
-			{
-				for (ik=0; ik<numridges[ij]*NPEAK+NBACK; ik++)
-				{
-					printf("%d\t%d\t%e\n", ii, ik, 
-						log10(fabs(covar[ii*(numridges[ij]*NPEAK+NBACK)+ik]+1e-7)));
-				}
-				printf("\n");
-			}
+			/* Print fit debug */
+			if (par.debugfname) output_debug(&par);
+		
+			/* Print covariance matrix */
+			if (par.covarfname) output_covar(covar, numridges[ij], &par);
 
 			/* Output fit to file if valid */
 			if (mpreturn!=MP_MAXITER && mpreturn > 0 && mpreturn!=3)
@@ -394,6 +369,7 @@ int main (int argc, char* argv[])
 			free(param);
 			free(bounds);
 			free(xerror);
+			if (par.covarfname) free(covar);
 		}
 	}
 	fclose(fpout);
@@ -429,7 +405,7 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 	istw = sub->start;
 	iendw = sub->end;
 	akt = sub->k;
-	twopi = 6.28318530717958647692528676655901; /* lolwut */
+	twopi = 6.28318530717958647692528676655901; /* fix this.. */
 
 	num = 0;
 	for (iw=istw; iw<=iendw; iw++)
@@ -467,6 +443,6 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 			num++;
 		}
 	}
-	return 0;
+	return EXIT_SUCCESS;
 }
 
