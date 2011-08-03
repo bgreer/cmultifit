@@ -11,7 +11,7 @@ void usage (char* name)
 
 int main (int argc, char* argv[])
 {
-	FILE *fpmodel, *fpout, *fpdebug;
+	FILE *fpmodel, *fpout;
 	struct params par;
 	int status = 0;
 	int ii, ij, ik;
@@ -255,11 +255,11 @@ int main (int argc, char* argv[])
 			}
 
 			/* Set optimization parameters */
-			mpconf->ftol = 1e-8;
-			mpconf->xtol = 1e-4;
-			mpconf->gtol = 1e-8;
-			mpconf->covtol = 1e-10;
-			mpconf->maxiter = 200;
+			mpconf->ftol = par.ftol;
+			mpconf->xtol = par.xtol;
+			mpconf->gtol = par.gtol;
+			mpconf->covtol = 1e-14;
+			mpconf->maxiter = par.niter;
 			mpconf->nofinitecheck = 1;
 
 			mpres->xerror = xerror;
@@ -399,13 +399,12 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 {
 	struct kslice *sub;
 	int istw, iendw, num, iw, itht, ik;
-	double akt, w1, twopi, tht, den, x2, err, back;
+	double akt, w1, tht, den, x2, err, back;
 
 	sub = (struct kslice*) private;
 	istw = sub->start;
 	iendw = sub->end;
 	akt = sub->k;
-	twopi = 6.28318530717958647692528676655901; /* fix this.. */
 
 	num = 0;
 	for (iw=istw; iw<=iendw; iw++)
@@ -415,14 +414,14 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 		back += p[n-6]/(1.+pow(p[n-5]*w1,p[n-4]));
 		for (itht=0; itht<sub->ntheta; itht++)
 		{
-			tht = twopi*itht/sub->ntheta;
+			tht = TWOPI*itht/sub->ntheta;
 
 			deviates[num] = 0.0;
 			if (sub->data[iw-istw][itht] > 0.0 && !isnan(sub->data[iw-istw][itht]))
 			{
 				for (ik=0; ik<n/NPEAK; ik++)
 				{
-					den = w1 + akt*(p[ik*NPEAK+3]*cos(tht)+p[ik*NPEAK+4]*sin(tht))/twopi - p[ik*NPEAK];
+					den = w1 + akt*(p[ik*NPEAK+3]*cos(tht)+p[ik*NPEAK+4]*sin(tht))/TWOPI - p[ik*NPEAK];
 					den = den*den + p[ik*NPEAK+2]*p[ik*NPEAK+2]/4.0;
 					x2 = (p[ik*NPEAK+1]+p[ik*NPEAK+5]*cos(2.0*tht-p[ik*NPEAK+6]))*p[ik*NPEAK+2]/(2.0*den);
 					deviates[num] += x2;
@@ -437,6 +436,7 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 					case WEIGHT_MAXL:
 						deviates[num] = sub->data[iw-istw][itht]/(deviates[num]+back);
 						deviates[num] -= log(deviates[num]);
+						deviates[num] = sqrt(deviates[num]);
 						break;
 				}
 			}

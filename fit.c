@@ -5,6 +5,8 @@
 #include "mpfit.h"
 #include "header.h"
 
+/* TODO: make these use same weighting as multifit */
+
 int fit_peak (float *freq, float *amp, float *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k)
 {
 	int ii, ij, mpreturn;
@@ -99,13 +101,12 @@ int funk_single (int m, int n, double* p, double *deviates, double **derivs, voi
 {
 	struct kslice *sub;
 	int istw, iendw, num, iw, itht, ik;
-	double akt, w1, twopi, tht, den, x2, err;
+	double akt, w1, tht, den, x2, err;
 
 	sub = (struct kslice*) private;
 	istw = sub->start;
 	iendw = sub->end;
 	akt = sub->k;
-	twopi = 6.28318530717958647692528676655901;
 
 	num = 0;
 	for (iw=istw; iw<=iendw; iw++)
@@ -113,7 +114,7 @@ int funk_single (int m, int n, double* p, double *deviates, double **derivs, voi
 		w1 = iw*sub->delta_nu;
 		for (itht=0; itht<sub->ntheta; itht++)
 		{
-			tht = twopi*itht/sub->ntheta;
+			tht = TWOPI*itht/sub->ntheta;
 			deviates[num] = 0.0;
 			if (sub->data[iw-istw][itht] > 0.0 && !isnan(sub->data[iw-istw][itht]))
 			{

@@ -26,6 +26,7 @@
 #define NOISE_SMOOTH (1)
 #define NOISE_WAVELET (2)
 
+#define TWOPI (6.28318530717958648)
 
 struct kslice
 {
