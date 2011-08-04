@@ -1,10 +1,10 @@
 # Parameter file for cmultifit (# starts a comment)
 
 # first line is main spectrum to read
-../simring/8deg/spec_180.00_+00.00_pr.fits
+../hmi/new_su_rsb.avgpspec_fd15.2099.+00.0.+00.0.mean.fits
 
 # second line is model file
-sim_hmi.model
+hmi_trunc.model
 
 # third line is the file to output to
 out
@@ -16,7 +16,7 @@ out
 # 0 = normal (weighted by noise, see below)
 # 1 = maximum likelihood (weighted by fit value)
 #     no noise is computed, so next parameter is irrelevant
-1
+0
 
 # sixth is noise estimator
 # 0 = constant, set as 0.1*(global average power)
@@ -26,7 +26,7 @@ out
 
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
-0 0
+20 20
 
 
 # Next are parameters for fit convergence

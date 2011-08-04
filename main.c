@@ -230,9 +230,11 @@ int main (int argc, char* argv[])
 			bounds[numridges[ij]*NPEAK+5].limits[1] = 10000.;
 
 			subsection.par = &par;
+			
 			if (!par.silent) printf("\tFitting background at low frequency.\n");
-			fit_back(&par, &(param[numridges[ij]*NPEAK]), &(param[numridges[ij]*NPEAK+1]), 
+/*			fit_back(&par, &(param[numridges[ij]*NPEAK]), &(param[numridges[ij]*NPEAK+1]), 
 				&(param[numridges[ij]*NPEAK+2]), pol, noise, delta_nu, nnu, ntheta, ij);
+*/			
 			/* Load klice struct for passing to function */
 			subsection.start = 0;
 			if (subsection.start < 0) subsection.start = 0;
@@ -317,8 +319,10 @@ int main (int argc, char* argv[])
 			/* Output optimization details */
 			if (!par.silent) 
 			{
-				printf("\tStarting chi2 = %e\n", mpres->orignorm/(ntheta*(subsection.end-subsection.start)));
-				printf("\tFinal chi2 = %e\n", mpres->bestnorm/(ntheta*(subsection.end-subsection.start)));
+				printf("\tStarting chi2 = %e\n", 
+					mpres->orignorm/(ntheta*(subsection.end-subsection.start)));
+				printf("\tFinal chi2 = %e\n", 
+					mpres->bestnorm/(ntheta*(subsection.end-subsection.start)));
 				printf("\tNumber of iterations = %d\n", mpres->niter);
 				printf("\tNumber of function evals = %d\n", mpres->nfev);
 				printf("\tNumber of pegged parameters = %d\n", mpres->npegged);
@@ -328,7 +332,9 @@ int main (int argc, char* argv[])
 				printf("%f\n", param[numridges[ij]*NPEAK+ii]);
 
 			/* Print fit debug */
-			if (par.debugfname) output_debug(&par);
+			if (par.debugfname) output_debug(&par, pol, noise, ntheta, nk, nnu, ij, ntheta*(subsection.end-subsection.start+1), 
+					numridges[ij]*NPEAK+NBACK, 
+					param, delta_nu, delta_k);
 		
 			/* Print covariance matrix */
 			if (par.covarfname) output_covar(covar, numridges[ij], &par);
@@ -338,12 +344,22 @@ int main (int argc, char* argv[])
 			{
 				for (ii=0; ii<numridges[ij]; ii++)
 				{
-					if (param[ii*NPEAK+2] > 7.5 && param[ii*NPEAK+2] < 665. && 
-							abs(param[ii*NPEAK]-freq[ij][ii])/freq[ij][ii] < 0.2 && 
-							param[ii*NPEAK+3] < 900. && param[ii*NPEAK+4] < 900. &&
-							xerror[ii*NPEAK]>0.0 && xerror[ii*NPEAK+1]>0.0 && xerror[ii*NPEAK+2]>0.0 && 
-							xerror[ii*NPEAK+3]>0.0 && xerror[ii*NPEAK+4]>0.0)
+					if (param[ii*NPEAK+2] < 7.5)
 					{
+						printf("\tLine at %f deemed invalid: ", param[ii*NPEAK]);
+						printf("Width too small (%f)\n", param[ii*NPEAK+2]);
+					} else if (param[ii*NPEAK+2] > 665.) {
+						printf("\tLine at %f deemed invalid: ", param[ii*NPEAK]);
+						printf("Width too large (%f)\n", param[ii*NPEAK+2]);
+					} else if (abs(param[ii*NPEAK]-freq[ij][ii])/freq[ij][ii] >= 0.2) {
+						printf("\tLine at %f deemed invalid: ", param[ii*NPEAK]);
+						printf("Frequency drifted too much from model\n");
+					} else if (xerror[ii*NPEAK]<=0.0 || xerror[ii*NPEAK+1]<=0.0 || 
+							xerror[ii*NPEAK+2]<=0.0 || xerror[ii*NPEAK+3]<=0.0 || 
+							xerror[ii*NPEAK+4]<=0.0) {
+						printf("\tLine at %f deemed invalid: ", param[ii*NPEAK]);
+						printf("Zero error\n");
+					} else {
 						fprintf(fpout, "%d\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\n", 
 							ij, 
 							ij*delta_k,
@@ -356,8 +372,7 @@ int main (int argc, char* argv[])
 							param[ii*NPEAK+5], xerror[ii*NPEAK+5], 
 							param[ii*NPEAK+6], xerror[ii*NPEAK+6]
 							);
-					} else {
-						printf("\tLine at %f deemed invalid\n", param[ii*NPEAK]);
+
 					}
 				}
 				fflush(fpout);

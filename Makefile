@@ -13,3 +13,4 @@ noise.o : noise.c header.h
 
 io.o : io.c header.h
 	gcc -c io.c header.h -ansi
+

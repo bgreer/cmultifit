@@ -2,33 +2,41 @@
 #include <math.h>
 #include "header.h"
 
-void output_debug (struct params* p)
+void output_debug (struct params* p, float***pol, float***noise, int ntheta, int nk, int nnu, int k, int m, int n, double* x, float delta_nu, float delta_k)
 {
 	FILE* fp;
-	int ii, ik;
-/*
+	int ii, ik, ij, num;
+	double back1, back2, fit, denom;
+	
 	fp = fopen(p->debugfname, "w");
 	for (ii=0; ii<nnu; ii++)
 	{
-		sum = sum2 = sum3 = 0.0;
 		for (ik=0; ik<1; ik++)
 		{
-			sum = model(numridges[ij], ii*delta_nu, ij*delta_k, 6.28318531*(ik+1)/ntheta, param)/1.0;
-			sum2 = pol[ii][ij][ik]/1.0;
-			sum3 = noise[ii][ij][ik]/1.0;
-				
-		fprintf(fpdebug, "%f\t%e\t%e\t%e\t%e\t%e\n", ii*delta_nu, sum2, sum, 
-			param[numridges[ij]*NPEAK]/(1.+pow(ii*delta_nu*param[numridges[ij]*NPEAK+1],
-				param[numridges[ij]*NPEAK+2])), 
-			param[numridges[ij]*NPEAK+3]*param[numridges[ij]*NPEAK+5]/
-				(pow(ii*delta_nu-param[numridges[ij]*NPEAK+4], 2.) + 
-					pow(0.5*param[numridges[ij]*NPEAK+5],2.)), 
-			sum3);
+			back1 = x[n-6]/(1.0+pow(x[n-5]*ii*delta_nu,x[n-4]));
+			back2 = x[n-3]*x[n-1]/((ii*delta_nu-x[n-2])*(ii*delta_nu-x[n-2]) + 0.25*x[n-1]*x[n-1]);
+			fit = 0.0;
+			for (ij=0; ij<(n-NBACK)/NPEAK; ij++)
+			{
+				denom = ii*delta_nu
+					+ k*delta_k*(x[ij*NPEAK+3]*cos(ik*TWOPI/ntheta)
+						+x[ij*NPEAK+4]*sin(ik*TWOPI/ntheta))/TWOPI
+					- x[ij*NPEAK];
+				fit += 0.5*x[ij*NPEAK+2]*x[ij*NPEAK+1] / 
+					(denom*denom + 0.25*x[ij*NPEAK+2]*x[ij*NPEAK+2]);
+			}
+
+			fprintf(fp, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", ik, ii*delta_nu, 
+				pol[ii][k][ik], 
+				noise[ii][k][ik], 
+				back1+back2+fit, 
+				back1, 
+				back2, 
+				((back1+back2+fit)-pol[ii][k][ik])/(back1+back2+fit));
 		}
-		fprintf(fpdebug, "");
+		fprintf(fp, "");
 	}
 	fclose(fp);
-*/
 }
 
 /* Prints covariance matrix to output file */

@@ -63,7 +63,7 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, floa
 int funk_back(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 
 /* io.c */
-void output_debug (struct params* p);
+void output_debug (struct params* p, float***pol, float***noise, int ntheta, int nk, int nnu, int k, int m, int n, double* x, float delta_nu, float delta_k);
 void output_covar (double* covar, int n, struct params* p);
 int read_fits_file (float**** spec, float**** noise, struct params* p, 
 		int* ntheta, int* nk, int* nnu, float* delta_k, float* delta_nu);
