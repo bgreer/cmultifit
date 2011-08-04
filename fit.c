@@ -7,7 +7,7 @@
 
 /* TODO: make these use same weighting as multifit */
 
-int fit_peak (float *freq, float *amp, float *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k)
+int fit_peak (struct params* p, float *freq, float *amp, float *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k)
 {
 	int ii, ij, mpreturn;
 	double *param, *xerror;
@@ -26,6 +26,7 @@ int fit_peak (float *freq, float *amp, float *width, float*** pol, float*** nois
 	mpconf = (mp_config*) calloc(1, sizeof(mp_config));
 
 	/* Load subsection data */
+	sub.par = p;
 	sub.start = (param[0] - 1.0*param[2])/delta_nu;
 	sub.end = (param[0] + 1.0*param[2])/delta_nu;
 	if (sub.start < 0) sub.start = 0;
@@ -121,8 +122,19 @@ int funk_single (int m, int n, double* p, double *deviates, double **derivs, voi
 				den = w1 - p[0];
 				den = den*den + p[2]*p[2]/4.0;
 				x2 = p[1]*p[2]/(2.0*den) + p[3];
-				deviates[num] = x2 - sub->data[iw-istw][itht];
-				deviates[num] /= sub->noise[iw-istw][itht];
+				switch (sub->par->chiweight)
+				{
+					case WEIGHT_NOISE:
+						deviates[num] = (x2 - sub->data[iw-istw][itht]);
+						deviates[num] /= sub->noise[iw-istw][itht];
+						break;
+					case WEIGHT_MAXL:
+						deviates[num] = sub->data[iw-istw][itht]/(x2);
+						deviates[num] -= log(deviates[num]);
+						deviates[num] = sqrt(deviates[num]);
+						break;
+				}
+
 			}
 			num++;
 		}
@@ -130,7 +142,7 @@ int funk_single (int m, int n, double* p, double *deviates, double **derivs, voi
 	return 0;
 }
 
-int fit_back (double* amp, double* cutoff, double* power, float*** pol, float*** noise, float delta_nu, int nnu, int ntheta, int k)
+int fit_back (struct params* p, double* amp, double* cutoff, double* power, float*** pol, float*** noise, float delta_nu, int nnu, int ntheta, int k)
 {
 	int ii, ij, mpreturn;
 	double *param;
@@ -148,6 +160,7 @@ int fit_back (double* amp, double* cutoff, double* power, float*** pol, float***
 	mpconf = (mp_config*) calloc(1, sizeof(mp_config));
 
 	/* Load subsection data */
+	sub.par = p;
 	sub.start = 0;
 	sub.end = (1000.)/delta_nu;
 	if (sub.end >= nnu) sub.end = nnu-1;
@@ -226,7 +239,18 @@ int funk_back (int m, int n, double* p, double *deviates, double **derivs, void 
 		back = p[0]/(1.+pow(p[1]*iw*sub->delta_nu,p[2]));
 		for (itht=0; itht<sub->ntheta; itht++)
 		{
-			deviates[num] = (back - sub->data[iw-istw][itht])/sub->noise[iw-istw][itht];
+			switch (sub->par->chiweight)
+			{
+				case WEIGHT_NOISE:
+					deviates[num] = (back - sub->data[iw-istw][itht]);
+					deviates[num] /= sub->noise[iw-istw][itht];
+					break;
+				case WEIGHT_MAXL:
+					deviates[num] = sub->data[iw-istw][itht]/(back);
+					deviates[num] -= log(deviates[num]);
+					deviates[num] = sqrt(deviates[num]);
+					break;
+			}
 			num++;
 		}
 	}

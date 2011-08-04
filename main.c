@@ -141,7 +141,7 @@ int main (int argc, char* argv[])
 			if (!par.silent) printf("\tDoing single ridge estimates.\n");
 			for (ii=0; ii<numridges[ij]; ii++)
 			{
-				fit_peak(&(freq[ij][ii]), &(amp[ij][ii]), &(width[ij][ii]), pol, noise, 
+				fit_peak(&par, &(freq[ij][ii]), &(amp[ij][ii]), &(width[ij][ii]), pol, noise, 
 					delta_nu, delta_k, nnu, ntheta, ij);
 			}
 
@@ -231,7 +231,7 @@ int main (int argc, char* argv[])
 
 			subsection.par = &par;
 			if (!par.silent) printf("\tFitting background at low frequency.\n");
-			fit_back(&(param[numridges[ij]*NPEAK]), &(param[numridges[ij]*NPEAK+1]), 
+			fit_back(&par, &(param[numridges[ij]*NPEAK]), &(param[numridges[ij]*NPEAK+1]), 
 				&(param[numridges[ij]*NPEAK+2]), pol, noise, delta_nu, nnu, ntheta, ij);
 			/* Load klice struct for passing to function */
 			subsection.start = 0;

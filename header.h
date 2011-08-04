@@ -57,9 +57,9 @@ void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int n
 unsigned int powerof2 (unsigned int n);
 
 /* fit.c */
-int fit_peak (float *freq, float *amp, float *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k);
+int fit_peak (struct params* p, float *freq, float *amp, float *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k);
 int funk_single(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
-int fit_back (double* amp, double* cutoff, double* power, float*** pol, float*** noise, float delta_nu, int nnu, int ntheta, int k);
+int fit_back (struct params* p, double* amp, double* cutoff, double* power, float*** pol, float*** noise, float delta_nu, int nnu, int ntheta, int k);
 int funk_back(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 
 /* io.c */
