@@ -26,7 +26,7 @@ void output_debug (struct params* p, float***pol, float***noise, int ntheta, int
 					(denom*denom + 0.25*x[ij*NPEAK+2]*x[ij*NPEAK+2]);
 			}
 
-			fprintf(fp, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", ik, ii*delta_nu, 
+			fprintf(fp, "%d\t%e\t%e\t%e\t%e\t%e\t%e\t%e\n", ik, ii*delta_nu, 
 				pol[ii][k][ik], 
 				noise[ii][k][ik], 
 				back1+back2+fit, 
@@ -65,13 +65,13 @@ void output_covar (double* covar, int n, struct params* p)
 
 /* Read FITS spectrum, load header keys into variables, load data cube into spec */
 int read_fits_file (float**** spec, float**** noise, struct params* p, 
-		int* ntheta, int* nk, int* nnu, float* delta_k, float* delta_nu)
+		int* ntheta, int* nk, int* nnu, double* delta_k, double* delta_nu)
 {
 	fitsfile *fptr;
 	int ii, ij, ik;
 	int status = 0;
 	long coords[3];
-	float *buff;
+	float *buff, read;
 
 	if (!p->silent) printf("Reading FITS file: %s\n", p->fitsfname);
 	
@@ -98,8 +98,10 @@ int read_fits_file (float**** spec, float**** noise, struct params* p,
 	if (!p->silent)
 		printf("FITS dimensions:\n\ttheta:\t%d\n\tk:\t%d\n\tnu:\t%d\n", *ntheta, *nk, *nnu);
 	
-	fits_read_key(fptr, TFLOAT, "DELTA_K", delta_k, NULL, &status);
-	fits_read_key(fptr, TFLOAT, "DELTA_NU", delta_nu, NULL, &status);
+	fits_read_key(fptr, TFLOAT, "DELTA_K", &read, NULL, &status);
+	*delta_k = read;
+	fits_read_key(fptr, TFLOAT, "DELTA_NU", &read, NULL, &status);
+	*delta_nu = read;
 	
 	if (status)
 	{
@@ -132,7 +134,6 @@ int read_fits_file (float**** spec, float**** noise, struct params* p,
 		}
 	}
 	buff = (float*) malloc((*ntheta)*sizeof(float));
-
 /* Read FITS file into array */
 	coords[0] = 1L;
 	if (!p->silent) printf("Reading data cube into memory.\n");

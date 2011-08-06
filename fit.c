@@ -7,7 +7,7 @@
 
 /* TODO: make these use same weighting as multifit */
 
-int fit_peak (struct params* p, float *freq, float *amp, float *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k)
+int fit_peak (struct params* p, double *freq, double *amp, double *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k)
 {
 	int ii, ij, mpreturn;
 	double *param, *xerror;
@@ -18,7 +18,7 @@ int fit_peak (struct params* p, float *freq, float *amp, float *width, float*** 
 
 	param = (double*) malloc(4*sizeof(double));
 	param[0] = *freq;
-	param[1] = *amp*40.;
+	param[1] = *amp;
 	param[2] = *width;
 	param[3] = *amp*0.01;
 
@@ -60,8 +60,8 @@ int fit_peak (struct params* p, float *freq, float *amp, float *width, float*** 
 	bounds[0].limits[0] = sub.start*delta_nu;
 	bounds[0].limits[1] = sub.end*delta_nu;
 	bounds[2].limited[0] = bounds[2].limited[1] = 1;
-	bounds[2].limits[0] = param[2]/3.;
-	bounds[2].limits[1] = param[2]*3.;
+	bounds[2].limits[0] = param[2]/4.;
+	bounds[2].limits[1] = param[2]*4.;
 
 	mpconf->ftol = 1e-8;
 	mpconf->xtol = 1e-4;
@@ -75,8 +75,8 @@ int fit_peak (struct params* p, float *freq, float *amp, float *width, float*** 
 					param, bounds, mpconf, &sub, mpres2);
 
 	*freq = param[0];
-	*amp = param[1]*0.4;/**2000./param[0];*/
-	*width = param[2]*0.4;
+	*amp = param[1];/**2000./param[0];*/
+	*width = param[2];
 
 	free(param);
 	free(bounds);
@@ -152,9 +152,11 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, floa
 	struct kslice sub;
 
 	param = (double*) malloc(3*sizeof(double));
-	param[0] = *amp;
-	param[1] = *cutoff;
-	param[2] = *power;
+	
+	/* Determine starting guesses */
+	param[0] = 1.0;
+	param[1] = 0.1;
+	param[2] = 2.0;
 
 	mpres2 = (mp_result*) calloc(1,sizeof(mp_result));
 	mpconf = (mp_config*) calloc(1, sizeof(mp_config));
@@ -162,7 +164,7 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, floa
 	/* Load subsection data */
 	sub.par = p;
 	sub.start = 0;
-	sub.end = (1000.)/delta_nu;
+	sub.end = (800.)/delta_nu;
 	if (sub.end >= nnu) sub.end = nnu-1;
 	sub.ntheta = ntheta;
 	sub.delta_nu = delta_nu;
@@ -190,12 +192,14 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, floa
 	}
 	bounds[0].limited[0] = 1;
 	bounds[0].limits[0] = 0.0;
+	bounds[2].limited[0] = 1;
+	bounds[2].limits[0] = 0.0;
 
-	mpconf->ftol = 1e-8;
-	mpconf->xtol = 1e-8;
-	mpconf->gtol = 1e-8;
+	mpconf->ftol = p->ftol;
+	mpconf->xtol = p->xtol;
+	mpconf->gtol = p->gtol;
 	mpconf->covtol = 1e-10;
-	mpconf->maxiter = 200;
+	mpconf->maxiter = p->niter;
 
 	mpreturn = 1;
 	mpreturn = mpfit(&funk_back, ntheta*(sub.end-sub.start+1), 3, 
@@ -204,17 +208,6 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, floa
 	*amp = param[0];
 	*cutoff = param[1];
 	*power = param[2];
-	
-	FILE *fp;
-	float den;
-	fp = fopen("debug2", "w");
-	for (ii=sub.start; ii<=sub.end; ii++)
-	{
-		fprintf(fp, "%f\t%f\t%f\n", ii*delta_nu, *amp/(1.+pow(*cutoff*ii*delta_nu,*power)), sub.data[ii-sub.start][0]);
-	}
-	fclose(fp);
-	
-
 
 	free(param);
 	free(bounds);

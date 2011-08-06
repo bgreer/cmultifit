@@ -16,9 +16,9 @@ int main (int argc, char* argv[])
 	int status = 0;
 	int ii, ij, ik;
 	int ntheta, nk, nnu;
-	float delta_nu, delta_k;
+	double delta_nu, delta_k;
 	float ***pol, ***noise;
-	float **freq, **amp, **width;
+	double **freq, **amp, **width;
 	float readfreq, readamp, readwidth, readk;
 	int *numridges;
 
@@ -45,15 +45,15 @@ int main (int argc, char* argv[])
 	/* Open FITS file and read keys */
 	if (read_fits_file(&pol, &noise, &par, &ntheta, &nk, &nnu, &delta_k, &delta_nu)==EXIT_FAILURE)
 		return EXIT_FAILURE;
-
 	/* TODO: Check kstart and kend */
+	if (par.kend >= nk) par.kend = nk-1;
 
 /* Read model file */
 	if (!par.silent) printf("Reading model from %s\n", par.modelfname);
 	numridges = (int*) malloc(nk*sizeof(int));
-	freq = (float**) malloc(nk*sizeof(float*));
-	amp = (float**) malloc(nk*sizeof(float*));
-	width = (float**) malloc(nk*sizeof(float*));
+	freq = (double**) malloc(nk*sizeof(double*));
+	amp = (double**) malloc(nk*sizeof(double*));
+	width = (double**) malloc(nk*sizeof(double*));
 	for (ii=0; ii<nk; ii++)
 		numridges[ii] = 0;
 	/* Run through once to count ridges */
@@ -79,9 +79,9 @@ int main (int argc, char* argv[])
 	{
 		if (numridges[ii]>0)
 		{
-			freq[ii] = (float*) malloc(numridges[ii]*sizeof(float));
-			amp[ii] = (float*) malloc(numridges[ii]*sizeof(float));
-			width[ii] = (float*) malloc(numridges[ii]*sizeof(float));
+			freq[ii] = (double*) malloc(numridges[ii]*sizeof(double));
+			amp[ii] = (double*) malloc(numridges[ii]*sizeof(double));
+			width[ii] = (double*) malloc(numridges[ii]*sizeof(double));
 		}
 		for (ij=0; ij<numridges[ii]; ij++)
 		{
@@ -137,14 +137,25 @@ int main (int argc, char* argv[])
 			xerror = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double));
 			if (par.covarfname)
 				covar = malloc(((numridges[ij]*NPEAK+NBACK)*(numridges[ij]*NPEAK+NBACK))*sizeof(double));
+
 			/* Do rough fit of single peaks */
+			/* TODO: fix this */
 			if (!par.silent) printf("\tDoing single ridge estimates.\n");
-			for (ii=0; ii<numridges[ij]; ii++)
+			for (ii=0; ii<numridges[ij]*0; ii++)
 			{
 				fit_peak(&par, &(freq[ij][ii]), &(amp[ij][ii]), &(width[ij][ii]), pol, noise, 
 					delta_nu, delta_k, nnu, ntheta, ij);
 			}
+			
+			/* Do rough fit of background */
+			if (!par.silent) printf("\tFitting background at low frequency.\n");
+			fit_back(&par, &(param[numridges[ij]*NPEAK]), &(param[numridges[ij]*NPEAK+1]), 
+				&(param[numridges[ij]*NPEAK+2]), pol, noise, delta_nu, nnu, ntheta, ij);
+			
+			printf("back = %e, %e, %f\n", param[numridges[ij]*NPEAK], param[numridges[ij]*NPEAK+1], 
+				param[numridges[ij]*NPEAK+2]);
 
+			/* Set multifit contraints */
 			for (ii=0; ii<numridges[ij]; ii++)
 			{
 				for (ik=0; ik<NPEAK; ik++)
@@ -205,22 +216,19 @@ int main (int argc, char* argv[])
 				bounds[numridges[ij]*NPEAK+ii].relstep = 0.0;
 				bounds[numridges[ij]*NPEAK+ii].step = 0.0;
 			}
-			param[numridges[ij]*NPEAK] = 0.5;
 			bounds[numridges[ij]*NPEAK].limited[0] = 1;
 			bounds[numridges[ij]*NPEAK].limited[1] = 0;
 			bounds[numridges[ij]*NPEAK].limits[0] = 0.0;
-			param[numridges[ij]*NPEAK+1] = 0.0033;
 			bounds[numridges[ij]*NPEAK+1].limited[0] = bounds[numridges[ij]*NPEAK+1].limited[1] = 0;
-			param[numridges[ij]*NPEAK+2] = 2.5;
 			bounds[numridges[ij]*NPEAK+2].limited[0] = 1;
 			bounds[numridges[ij]*NPEAK+2].limited[1] = 0;
 			bounds[numridges[ij]*NPEAK+2].limits[0] = 0.0;
 
-			param[numridges[ij]*NPEAK+3] = 2.;	
+			param[numridges[ij]*NPEAK+3] = 0.1*param[numridges[ij]*NPEAK];
 			bounds[numridges[ij]*NPEAK+3].limited[0] = 1;
 			bounds[numridges[ij]*NPEAK+3].limited[1] = 0;
 			bounds[numridges[ij]*NPEAK+3].limits[0] = 0.0;
-			param[numridges[ij]*NPEAK+4] = 2000.;
+			param[numridges[ij]*NPEAK+4] = 1500.;
 			bounds[numridges[ij]*NPEAK+4].limited[0] = bounds[numridges[ij]*NPEAK+4].limited[1] = 1;
 			bounds[numridges[ij]*NPEAK+4].limits[0] = 200.;
 			bounds[numridges[ij]*NPEAK+4].limits[1] = nnu*delta_nu;
@@ -231,10 +239,6 @@ int main (int argc, char* argv[])
 
 			subsection.par = &par;
 			
-			if (!par.silent) printf("\tFitting background at low frequency.\n");
-/*			fit_back(&par, &(param[numridges[ij]*NPEAK]), &(param[numridges[ij]*NPEAK+1]), 
-				&(param[numridges[ij]*NPEAK+2]), pol, noise, delta_nu, nnu, ntheta, ij);
-*/			
 			/* Load klice struct for passing to function */
 			subsection.start = 0;
 			if (subsection.start < 0) subsection.start = 0;
@@ -414,50 +418,86 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 {
 	struct kslice *sub;
 	int istw, iendw, num, iw, itht, ik;
-	double akt, w1, tht, den, x2, err, back;
-
+	double akt, w1, tht, den, x2, err, back, cost, sint;
+	double *thtarr, *thtpow;
+	
 	sub = (struct kslice*) private;
 	istw = sub->start;
 	iendw = sub->end;
 	akt = sub->k;
+	thtarr = malloc(sub->ntheta*sizeof(double));
+	thtpow = malloc(sub->ntheta*sizeof(double));
 
+	/* Add background first */
 	num = 0;
 	for (iw=istw; iw<=iendw; iw++)
 	{
 		w1 = iw*sub->delta_nu;
 		back = p[n-3]*p[n-1]/((w1-p[n-2])*(w1-p[n-2]) + 0.25*p[n-1]*p[n-1]);
-		back += p[n-6]/(1.+pow(p[n-5]*w1,p[n-4]));
+		back += p[n-6]/(1.0+pow(p[n-5]*w1, p[n-4]));
+		for (itht=0; itht<sub->ntheta; itht++)
+		{
+			deviates[num] = back;
+			num++;
+		}
+	}
+
+	/* Add each peak individually */
+	for (ik=0; ik<(n-NBACK)/NPEAK; ik++)
+	{
+		num = 0;
+		/*  pre-compute theta variation */
 		for (itht=0; itht<sub->ntheta; itht++)
 		{
 			tht = TWOPI*itht/sub->ntheta;
+			thtarr[itht] = akt*(p[ik*NPEAK+3]*cos(tht)+p[ik*NPEAK+4]*sin(tht))/TWOPI - p[ik*NPEAK];
+			thtpow[itht] = 0.5*p[ik*NPEAK+2]*(p[ik*NPEAK+1] + p[ik*NPEAK+5]*cos(2.0*tht-p[ik*NPEAK+6]));
+		}
+		/* Loop over each nu, then theta */
+		for (iw=istw; iw<=iendw; iw++)
+		{
+			w1 = iw*sub->delta_nu;
+			for (itht=0; itht<sub->ntheta; itht++)
+			{
+				den = w1 + thtarr[itht];
+				den = den*den + p[ik*NPEAK+2]*p[ik*NPEAK+2]/4.0;
+				x2 = thtpow[itht]/den;
+				deviates[num] += x2;
+				num++;
+			}
+		}
+	}
 
-			deviates[num] = 0.0;
+	/* Second step: subtract from data, weight appropriately */
+	num = 0;
+	for (iw=istw; iw<=iendw; iw++)
+	{
+		for (itht=0; itht<sub->ntheta; itht++)
+		{
 			if (sub->data[iw-istw][itht] > 0.0 && !isnan(sub->data[iw-istw][itht]))
 			{
-				for (ik=0; ik<n/NPEAK; ik++)
-				{
-					den = w1 + akt*(p[ik*NPEAK+3]*cos(tht)+p[ik*NPEAK+4]*sin(tht))/TWOPI - p[ik*NPEAK];
-					den = den*den + p[ik*NPEAK+2]*p[ik*NPEAK+2]/4.0;
-					x2 = (p[ik*NPEAK+1]+p[ik*NPEAK+5]*cos(2.0*tht-p[ik*NPEAK+6]))*p[ik*NPEAK+2]/(2.0*den);
-					deviates[num] += x2;
-				}
 				/* Weight Chi appropriately */
 				switch (sub->par->chiweight)
 				{
 					case WEIGHT_NOISE:
-						deviates[num] = ((deviates[num] + back) - sub->data[iw-istw][itht]);
+						deviates[num] = (deviates[num] - sub->data[iw-istw][itht]);
 						deviates[num] /= sub->noise[iw-istw][itht];
 						break;
 					case WEIGHT_MAXL:
-						deviates[num] = sub->data[iw-istw][itht]/(deviates[num]+back);
+						deviates[num] = sub->data[iw-istw][itht]/deviates[num];
 						deviates[num] -= log(deviates[num]);
-						deviates[num] = sqrt(deviates[num]);
+						/*deviates[num] = sqrt(deviates[num]);*/
 						break;
 				}
+			} else {
+				deviates[num] = 0.0;
 			}
 			num++;
 		}
 	}
+
+	free(thtarr);
+	free(thtpow);
 	return EXIT_SUCCESS;
 }
 

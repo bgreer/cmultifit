@@ -2,6 +2,7 @@
 
 # first line is main spectrum to read
 ../hmi/new_su_rsb.avgpspec_fd15.2099.+00.0.+00.0.mean.fits
+#../simring/8deg/spec_180.00_+00.00_pr.fits
 
 # second line is model file
 hmi_trunc.model
@@ -15,7 +16,7 @@ out
 # fifth is chi squared weighting
 # 0 = normal (weighted by noise, see below)
 # 1 = maximum likelihood (weighted by fit value)
-#     no noise is computed, so next parameter is irrelevant
+#     no noise is computed, so next parameter is irrelevant.
 0
 
 # sixth is noise estimator
@@ -26,7 +27,7 @@ out
 
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
-20 20
+0 999
 
 
 # Next are parameters for fit convergence
