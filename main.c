@@ -163,9 +163,6 @@ int main (int argc, char* argv[])
 			fit_back(&par, &(param[numridges[ij]*NPEAK]), &(param[numridges[ij]*NPEAK+1]), 
 				&(param[numridges[ij]*NPEAK+2]), pol, noise, delta_nu, nnu, ntheta, ij);
 			
-			printf("back = %e, %e, %f\n", param[numridges[ij]*NPEAK], param[numridges[ij]*NPEAK+1], 
-				param[numridges[ij]*NPEAK+2]);
-
 			/* Set multifit contraints */
 			for (ii=0; ii<numridges[ij]; ii++)
 			{
@@ -343,8 +340,18 @@ int main (int argc, char* argv[])
 				printf("\tNumber of pegged parameters = %d\n", mpres->npegged);
 			}
 
-			for (ii=0; ii<NBACK; ii++)
-				printf("%f\n", param[numridges[ij]*NPEAK+ii]);
+			/* Post-process fit parameters */
+			for (ii=0; ii<numridges[ij]; ii++)
+			{
+				if (param[ii*NPEAK+5] < 0.0) 
+				{
+					param[ii*NPEAK+6] += PI;
+					param[ii*NPEAK+5] = fabs(param[ii*NPEAK+5]);
+				}
+				while (param[ii*NPEAK+6] < 0.0)
+					param[ii*NPEAK+6] += TWOPI;
+				param[ii*NPEAK+6] = fmod(param[ii*NPEAK+6], TWOPI);
+			}
 
 			/* Print fit debug */
 			if (par.debugfname) output_debug(&par, pol, noise, ntheta, nk, nnu, ij, ntheta*(subsection.end-subsection.start+1), 
