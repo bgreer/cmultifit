@@ -234,6 +234,13 @@ void read_param_file (char* fname, struct params* p)
 						strcpy(p->covarfname, buffer);
 					}
 					break;
+				case PARAM_BACK:
+					if (strcmp(buffer, "0")!=0)
+					{
+						p->backfname = malloc(strlen(buffer)*sizeof(char));
+						strcpy(p->backfname, buffer);
+					}
+					break;
 			}
 			index++;
 		}

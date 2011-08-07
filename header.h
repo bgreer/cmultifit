@@ -18,6 +18,7 @@
 #define PARAM_NITER (10)
 #define PARAM_DEBUG (11)
 #define PARAM_COVAR (12)
+#define PARAM_BACK (13)
 
 /* Set which values correspond to which modes */
 #define WEIGHT_NOISE (0)
@@ -43,7 +44,7 @@ struct params
 	int kstart, kend;
 	double ftol, xtol, gtol;
 	int niter;
-	char *debugfname, *covarfname;
+	char *debugfname, *covarfname, *backfname;
 };
 
 /* main.c */

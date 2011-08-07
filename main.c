@@ -11,7 +11,7 @@ void usage (char* name)
 
 int main (int argc, char* argv[])
 {
-	FILE *fpmodel, *fpout;
+	FILE *fpmodel, *fpout, *fpback;
 	struct params par;
 	int status = 0;
 	int ii, ij, ik;
@@ -122,6 +122,17 @@ int main (int argc, char* argv[])
 	{
 		printf("ERROR: could not open output file: %s\n", par.outfname);
 		return EXIT_FAILURE;
+	}
+
+/* Open background output file if needed */
+	if (par.backfname)
+	{
+		fpback = fopen(par.backfname, "w");
+		if (fpback==NULL)
+		{
+			printf("ERROR: could not open output file: %s\n", par.backfname);
+			return EXIT_FAILURE;
+		}
 	}
 
 	if (!par.silent) printf("\nBeginning optimization, output file '%s'\n", par.outfname);
@@ -376,10 +387,20 @@ int main (int argc, char* argv[])
 							param[ii*NPEAK+5], xerror[ii*NPEAK+5], 
 							param[ii*NPEAK+6], xerror[ii*NPEAK+6]
 							);
-
 					}
 				}
 				fflush(fpout);
+			
+				/* Output background params to separate file */
+				if (par.backfname)
+				{
+					fprintf(fpback, "%d\t%f", ij, ij*delta_k);
+					for (ik=0; ik<NBACK; ik++)
+						fprintf(fpback, "\t%e", param[numridges[ij]*NPEAK+ik]);
+					fprintf(fpback, "\n");
+					fflush(fpback);
+				}
+
 			} else {
 				if (!par.silent) printf("\tFit deemed invalid, nothing printed to file\n");
 			}
@@ -392,7 +413,7 @@ int main (int argc, char* argv[])
 		}
 	}
 	fclose(fpout);
-
+	if (par.backfname) fclose(fpback);
 	return EXIT_SUCCESS;
 }
 

@@ -68,4 +68,4 @@ covar
 # After each successful multifit, outputs final parameters of background terms
 # Format (8 columns):
 # k-bin	k	par0	par1	par2	par3	par4	par5
-0
+backcoefs
