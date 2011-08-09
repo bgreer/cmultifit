@@ -7,7 +7,7 @@
 
 /* TODO: make these use same weighting as multifit */
 
-int fit_peak (struct params* p, double *freq, double *amp, double *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k)
+int fit_peak (struct params* p, double *freq, double *amp, double *width, double*** pol, double*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k)
 {
 	int ii, ij, ik, mpreturn;
 	double *param, *xerror;
@@ -90,7 +90,7 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, float*
 	free(mpconf);
 
 	FILE *fp;
-	float den;
+	double den;
 	fp = fopen("debug2", "w");
 	for (ii=sub.start; ii<=sub.end; ii++)
 	{
@@ -147,7 +147,7 @@ int funk_single (int m, int n, double* p, double *deviates, double **derivs, voi
 	return 0;
 }
 
-int fit_back (struct params* p, double* amp, double* cutoff, double* power, float*** pol, float*** noise, float delta_nu, int nnu, int ntheta, int k)
+int fit_back (struct params* p, double* amp, double* cutoff, double* power, double*** pol, double*** noise, float delta_nu, int nnu, int ntheta, int k)
 {
 	int ii, ij, ik, mpreturn;
 	double *param;

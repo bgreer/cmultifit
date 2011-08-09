@@ -17,7 +17,7 @@ int main (int argc, char* argv[])
 	int ii, ij, ik;
 	int ntheta, nk, nnu;
 	double delta_nu, delta_k;
-	float ***pol, ***noise;
+	double ***pol, ***noise;
 	double **freq, **amp, **width;
 	float readfreq, readamp, readwidth, readk;
 	int *numridges;

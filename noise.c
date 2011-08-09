@@ -10,15 +10,15 @@
 /* Computes gaussian smoothed spectrum in nu (azimuthally averaged) 
 	sets noise to be 0.1*(local avg)
 	radius = sigma of gaussian smoothing kernel */
-void compute_noise_smooth (float*** pol, float*** noise, 
+void compute_noise_smooth (double*** pol, double*** noise, 
 						int nnu, int nk, int ntheta, int radius)
 {
 	int ii, ij, ik, il;
-	float sum, ssum, weight;
-	float *gauss;
+	double sum, ssum, weight;
+	double *gauss;
 
 	/* precompute gaussian kernel */
-	gauss = (float*) malloc((6*radius+1)*sizeof(float));
+	gauss = (double*) malloc((6*radius+1)*sizeof(double));
 	for (ii=0; ii<6*radius+1; ii++)
 		gauss[ii] = exp(-(ii-radius*3)*(ii-radius*3)/(2.*radius*radius));
 
@@ -47,10 +47,10 @@ void compute_noise_smooth (float*** pol, float*** noise,
 }
 
 /* Computes noise to be 0.1*(average power at constant k) */
-void compute_noise_const (float*** pol, float*** noise, int nnu, int nk, int ntheta)
+void compute_noise_const (double*** pol, double*** noise, int nnu, int nk, int ntheta)
 {
 	int ii, ij, ik;
-	float sum;
+	double sum;
 	for (ij=0; ij<nk; ij++)
 	{
 		sum = 0.0;
@@ -68,7 +68,7 @@ void compute_noise_const (float*** pol, float*** noise, int nnu, int nk, int nth
 
 /* Computes noise to be stdev of reconstructed spectrum at constant (k, theta)
 	using only smallest scale wavelet components*/
-void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int ntheta)
+void compute_noise_wavelet (double*** pol, double*** noise, int nnu, int nk, int ntheta)
 {
 	int ii, ij, ik, il;
 	double* data;

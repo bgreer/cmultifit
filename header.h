@@ -53,21 +53,24 @@ double model (int numridges, double nu, double k, double theta, double* p);
 int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 
 /* noise.c */
-void compute_noise_smooth (float*** pol, float*** noise, int nnu, int nk, int ntheta, int radius);
-void compute_noise_const (float***pol, float*** noise, int nnu, int nk, int ntheta);
-void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int ntheta);
+void compute_noise_smooth (double*** pol, double*** noise, int nnu, int nk, int ntheta, int radius);
+void compute_noise_const (double***pol, double*** noise, int nnu, int nk, int ntheta);
+void compute_noise_wavelet (double*** pol, double*** noise, int nnu, int nk, int ntheta);
 unsigned int powerof2 (unsigned int n);
 
 /* fit.c */
-int fit_peak (struct params* p, double *freq, double *amp, double *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k);
+int fit_peak (struct params* p, double *freq, double *amp, double *width, 
+	double*** pol, double*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k);
 int funk_single(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
-int fit_back (struct params* p, double* amp, double* cutoff, double* power, float*** pol, float*** noise, float delta_nu, int nnu, int ntheta, int k);
+int fit_back (struct params* p, double* amp, double* cutoff, double* power, 
+	double*** pol, double*** noise, float delta_nu, int nnu, int ntheta, int k);
 int funk_back(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 
 /* io.c */
-void output_debug (struct params* p, float***pol, float***noise, int ntheta, int nk, int nnu, int k, int m, int n, double* x, float delta_nu, float delta_k);
+void output_debug (struct params* p, double***pol, double***noise, int ntheta, 
+	int nk, int nnu, int k, int m, int n, double* x, float delta_nu, float delta_k);
 void output_covar (double* covar, int n, struct params* p);
-int read_fits_file (float**** spec, float**** noise, struct params* p, 
+int read_fits_file (double**** spec, double**** noise, struct params* p, 
 		int* ntheta, int* nk, int* nnu, double* delta_k, double* delta_nu);
 void read_param_file (char* fname, struct params* p);
 void trim (char* str);

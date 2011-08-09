@@ -2,7 +2,7 @@
 #include <math.h>
 #include "header.h"
 
-void output_debug (struct params* p, float***pol, float***noise, int ntheta, int nk, int nnu, int k, int m, int n, double* x, float delta_nu, float delta_k)
+void output_debug (struct params* p, double ***pol, double ***noise, int ntheta, int nk, int nnu, int k, int m, int n, double* x, float delta_nu, float delta_k)
 {
 	FILE* fp;
 	int ii, ik, ij, num;
@@ -64,7 +64,7 @@ void output_covar (double* covar, int n, struct params* p)
 }
 
 /* Read FITS spectrum, load header keys into variables, load data cube into spec */
-int read_fits_file (float**** spec, float**** noise, struct params* p, 
+int read_fits_file (double ****spec, double ****noise, struct params* p, 
 		int* ntheta, int* nk, int* nnu, double* delta_k, double* delta_nu)
 {
 	fitsfile *fptr;
@@ -112,20 +112,20 @@ int read_fits_file (float**** spec, float**** noise, struct params* p,
 
 /* Allocate memory for entire FITS data cube */
 	if (!p->silent) 
-		printf("\nAllocating %ld bytes for data cube.\n", sizeof(float)*(*ntheta)*(*nk)*(*nnu));
+		printf("\nAllocating %ld bytes for data cube.\n", sizeof(double)*(*ntheta)*(*nk)*(*nnu));
 	if (!p->silent)
-		printf("\t With %ld bytes of overhead.\n", sizeof(float*)*(*nk)*(*nnu) + sizeof(float**)*(*nnu));
+		printf("\t With %ld bytes of overhead.\n", sizeof(double*)*(*nk)*(*nnu)+sizeof(double**)*(*nnu));
 
-	*spec = (float***) malloc((*nnu)*sizeof(float**));
-	*noise = (float***) malloc((*nnu)*sizeof(float**));
+	*spec = (double***) malloc((*nnu)*sizeof(double**));
+	*noise = (double***) malloc((*nnu)*sizeof(double**));
 	for (ii=0; ii<(*nnu); ii++)
 	{
-		(*spec)[ii] = (float**) malloc((*nk)*sizeof(float*));
-		(*noise)[ii] = (float**) malloc((*nk)*sizeof(float*));
+		(*spec)[ii] = (double**) malloc((*nk)*sizeof(double*));
+		(*noise)[ii] = (double**) malloc((*nk)*sizeof(double*));
 		for (ij=0; ij<(*nk); ij++)
 		{
-			(*spec)[ii][ij] = (float*) malloc((*ntheta)*sizeof(float));
-			(*noise)[ii][ij] = (float*) calloc(*ntheta,sizeof(float));
+			(*spec)[ii][ij] = (double*) malloc((*ntheta)*sizeof(double));
+			(*noise)[ii][ij] = (double*) calloc(*ntheta,sizeof(double));
 			if ((*spec)[ii][ij]==NULL)
 			{
 				printf("Error allocating memory.\n");
@@ -145,9 +145,8 @@ int read_fits_file (float**** spec, float**** noise, struct params* p,
 			for (ik=0; ik<(*ntheta); ik++)
 			{
 				if (buff[ik] < 0.0 || isnan(buff[ik])) buff[ik] = 0.0;
-				buff[ik] *= 1.0e7;
+				(*spec)[coords[2]-1][coords[1]-1][ik] = buff[ik] * 1.0e7;
 			}
-			memcpy((*spec)[coords[2]-1][coords[1]-1], buff, (*ntheta)*sizeof(float));
 		}
 	}
 	fits_close_file(fptr, &status);
