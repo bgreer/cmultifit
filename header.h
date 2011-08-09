@@ -2,7 +2,7 @@
 #include "mpfit.h"
 
 #define NPEAK (7) /* number of parameters for each peak */
-#define NBACK (6) /* number of parameters for background terms */
+#define NBACK (8) /* number of parameters for background terms */
 
 /* Set order of parameters in parameter file */
 #define PARAM_SPECTRUM (0)
@@ -32,7 +32,7 @@
 
 struct kslice
 {
-	float **data, **noise;
+	double **data, **noise;
 	int start, end, ntheta;
 	float delta_nu, k;
 	struct params* par;

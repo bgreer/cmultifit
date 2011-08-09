@@ -13,7 +13,7 @@ void output_debug (struct params* p, float***pol, float***noise, int ntheta, int
 	{
 		for (ik=0; ik<1; ik++)
 		{
-			back1 = x[n-6]/(1.0+pow(x[n-5]*ii*delta_nu,x[n-4]));
+			back1 = x[n-8]*(1.0+x[n-5]*cos(2.0*(TWOPI*ik/ntheta - x[n-4])))/(1.0+pow(x[n-7]*ii*delta_nu,x[n-6]));
 			back2 = x[n-3]*x[n-1]/((ii*delta_nu-x[n-2])*(ii*delta_nu-x[n-2]) + 0.25*x[n-1]*x[n-1]);
 			fit = 0.0;
 			for (ij=0; ij<(n-NBACK)/NPEAK; ij++)
@@ -125,7 +125,7 @@ int read_fits_file (float**** spec, float**** noise, struct params* p,
 		for (ij=0; ij<(*nk); ij++)
 		{
 			(*spec)[ii][ij] = (float*) malloc((*ntheta)*sizeof(float));
-			(*noise)[ii][ij] = (float*) malloc((*ntheta)*sizeof(float));
+			(*noise)[ii][ij] = (float*) calloc(*ntheta,sizeof(float));
 			if ((*spec)[ii][ij]==NULL)
 			{
 				printf("Error allocating memory.\n");
@@ -145,6 +145,7 @@ int read_fits_file (float**** spec, float**** noise, struct params* p,
 			for (ik=0; ik<(*ntheta); ik++)
 			{
 				if (buff[ik] < 0.0 || isnan(buff[ik])) buff[ik] = 0.0;
+				buff[ik] *= 1.0e7;
 			}
 			memcpy((*spec)[coords[2]-1][coords[1]-1], buff, (*ntheta)*sizeof(float));
 		}

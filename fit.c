@@ -9,7 +9,7 @@
 
 int fit_peak (struct params* p, double *freq, double *amp, double *width, float*** pol, float*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k)
 {
-	int ii, ij, mpreturn;
+	int ii, ij, ik, mpreturn;
 	double *param, *xerror;
 	mp_par *bounds;
 	mp_result *mpres2;
@@ -20,28 +20,31 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, float*
 	param[0] = *freq;
 	param[1] = *amp;
 	param[2] = *width;
-	param[3] = *amp*0.01;
+	param[3] = *amp;
 
 	mpres2 = (mp_result*) calloc(1,sizeof(mp_result));
 	mpconf = (mp_config*) calloc(1, sizeof(mp_config));
 
 	/* Load subsection data */
 	sub.par = p;
-	sub.start = (param[0] - 1.0*param[2])/delta_nu;
-	sub.end = (param[0] + 1.0*param[2])/delta_nu;
+	sub.start = (param[0] - 2.0*param[2])/delta_nu;
+	sub.end = (param[0] + 2.0*param[2])/delta_nu;
 	if (sub.start < 0) sub.start = 0;
 	if (sub.end >= nnu) sub.end = nnu-1;
 	sub.ntheta = ntheta;
 	sub.delta_nu = delta_nu;
-	sub.k = k*delta_k;
-	sub.data = malloc((sub.end-sub.start+1)*sizeof(float*));
-	sub.noise = malloc((sub.end-sub.start+1)*sizeof(float*));
+	sub.k = (k+1)*delta_k;
+	sub.data = malloc((sub.end-sub.start+1)*sizeof(double*));
+	sub.noise = malloc((sub.end-sub.start+1)*sizeof(double*));
 	for (ii=sub.start; ii<=sub.end; ii++)
 	{
-		sub.data[ii-sub.start] = malloc(ntheta*sizeof(float));
-		memcpy(sub.data[ii-sub.start], pol[ii][k], ntheta*sizeof(float));
-		sub.noise[ii-sub.start] = malloc(ntheta*sizeof(float));
-		memcpy(sub.noise[ii-sub.start], noise[ii][k], ntheta*sizeof(float));
+		sub.data[ii-sub.start] = malloc(ntheta*sizeof(double));
+		sub.noise[ii-sub.start] = malloc(ntheta*sizeof(double));
+		for (ik=0; ik<ntheta; ik++)
+		{
+			sub.data[ii-sub.start][ik] = pol[ii][k][ik];
+			sub.noise[ii-sub.start][ik] = noise[ii][k][ik];
+		}
 	}
 
 	bounds = malloc(4*sizeof(mp_par));
@@ -59,6 +62,8 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, float*
 	bounds[0].limited[0] = bounds[0].limited[1] = 1;
 	bounds[0].limits[0] = sub.start*delta_nu;
 	bounds[0].limits[1] = sub.end*delta_nu;
+	bounds[1].limited[0] = 1;
+	bounds[1].limits[0] = 0.0;
 	bounds[2].limited[0] = bounds[2].limited[1] = 1;
 	bounds[2].limits[0] = param[2]/4.;
 	bounds[2].limits[1] = param[2]*4.;
@@ -144,7 +149,7 @@ int funk_single (int m, int n, double* p, double *deviates, double **derivs, voi
 
 int fit_back (struct params* p, double* amp, double* cutoff, double* power, float*** pol, float*** noise, float delta_nu, int nnu, int ntheta, int k)
 {
-	int ii, ij, mpreturn;
+	int ii, ij, ik, mpreturn;
 	double *param;
 	mp_par *bounds;
 	mp_result *mpres2;
@@ -154,7 +159,7 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, floa
 	param = (double*) malloc(3*sizeof(double));
 	
 	/* Determine starting guesses */
-	param[0] = 1.0;
+	param[0] = pol[0][k][0];
 	param[1] = 0.1;
 	param[2] = 2.0;
 
@@ -169,14 +174,17 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, floa
 	sub.ntheta = ntheta;
 	sub.delta_nu = delta_nu;
 	sub.k = 0.0;
-	sub.data = malloc((sub.end-sub.start+1)*sizeof(float*));
-	sub.noise = malloc((sub.end-sub.start+1)*sizeof(float*));
+	sub.data = malloc((sub.end-sub.start+1)*sizeof(double*));
+	sub.noise = malloc((sub.end-sub.start+1)*sizeof(double*));
 	for (ii=sub.start; ii<=sub.end; ii++)
 	{
-		sub.data[ii-sub.start] = malloc(ntheta*sizeof(float));
-		memcpy(sub.data[ii-sub.start], pol[ii][k], ntheta*sizeof(float));
-		sub.noise[ii-sub.start] = malloc(ntheta*sizeof(float));
-		memcpy(sub.noise[ii-sub.start], noise[ii][k], ntheta*sizeof(float));
+		sub.data[ii-sub.start] = malloc(ntheta*sizeof(double));
+		sub.noise[ii-sub.start] = malloc(ntheta*sizeof(double));
+		for (ik=0; ik<ntheta; ik++)
+		{
+			sub.data[ii-sub.start][ik] = pol[ii][k][ik];
+			sub.noise[ii-sub.start][ik] = noise[ii][k][ik];
+		}
 	}
 
 	bounds = malloc(3*sizeof(mp_par));
@@ -201,7 +209,7 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, floa
 	mpconf->covtol = 1e-10;
 	mpconf->maxiter = p->niter;
 
-	mpreturn = 1;
+	mpreturn = 0;
 	mpreturn = mpfit(&funk_back, ntheta*(sub.end-sub.start+1), 3, 
 					param, bounds, mpconf, &sub, mpres2);
 

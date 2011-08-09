@@ -80,7 +80,7 @@ void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int n
 	data = (double*) calloc(n,sizeof(double));
 	
 	/* prepare for wavelet transforms */
-	w = gsl_wavelet_alloc (gsl_wavelet_daubechies, 6);
+	w = gsl_wavelet_alloc (gsl_wavelet_daubechies, 4);
 	work = gsl_wavelet_workspace_alloc (n);
 	for (ij=0; ij<nk; ij++)
 	{
@@ -92,11 +92,16 @@ void compute_noise_wavelet (float*** pol, float*** noise, int nnu, int nk, int n
 			for (ii=nnu; ii<n; ii++)
 				data[ii] = pol[nnu-1][ij][ik];
 
+			for (ii=0; ii<nnu; ii++)
+			{
+				if (data[ii] == 0.0) data[ii] = data[ii+1];
+			}
+
 			/* do wavelet transform */
 			gsl_wavelet_transform_forward (w, data, 1, n, work);
 			
 			/* filter in wavelet space(?) */
-			for (ii=0; ii<n/2; ii++)
+			for (ii=0; ii<n/4; ii++)
 				data[ii] = 0.0;
 			
 			/* transform back */

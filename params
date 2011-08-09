@@ -1,11 +1,11 @@
 # Parameter file for cmultifit (# starts a comment)
 
 # first line is main spectrum to read
-../hmi/new_su_rsb.avgpspec_fd15.2099.+00.0.+30.0.mean.fits
-#../simring/8deg/spec_180.00_+00.00_pr.fits
+#../hmi/new_su_rsb.avgpspec_fd15.2099.+00.0.+30.0.mean.fits
+../simring/4deg/spec_180.00_+00.00_pr.fits
 
 # second line is model file
-hmi_trunc.model
+../cguessring/out_4deg
 
 # third line is the file to output to
 out
@@ -17,6 +17,8 @@ out
 # 0 = normal (weighted by noise, see below)
 # 1 = maximum likelihood (weighted by fit value)
 #     no noise is computed, so next parameter is irrelevant.
+#	  Note: mpfit is not optimized for this, so it takes more iterations
+#	   you might want to increase the max # of iterations
 0
 
 # sixth is noise estimator

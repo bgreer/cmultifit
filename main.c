@@ -152,7 +152,7 @@ int main (int argc, char* argv[])
 			/* Do rough fit of single peaks */
 			/* TODO: fix this */
 			if (!par.silent) printf("\tDoing single ridge estimates.\n");
-			for (ii=0; ii<numridges[ij]*0; ii++)
+			for (ii=0; ii<numridges[ij]; ii++)
 			{
 				fit_peak(&par, &(freq[ij][ii]), &(amp[ij][ii]), &(width[ij][ii]), pol, noise, 
 					delta_nu, delta_k, nnu, ntheta, ij);
@@ -210,10 +210,11 @@ int main (int argc, char* argv[])
 				bounds[ii*NPEAK+4].limits[1] = 1000.0;
 
 				/* set theta variation params */
-				param[ii*NPEAK+5] = 0.0;
-				bounds[ii*NPEAK+5].limited[0] = 0;
-				bounds[ii*NPEAK+5].limited[1] = 0;
-				param[ii*NPEAK+6] = 0.0;
+				param[ii*NPEAK+5] = 0.1;
+				bounds[ii*NPEAK+5].limited[0] = bounds[ii*NPEAK+5].limited[1] = 1;
+				bounds[ii*NPEAK+5].limits[0] = -1.0;
+				bounds[ii*NPEAK+5].limits[1] = 1.0;
+				param[ii*NPEAK+6] = PI/2.0;
 				bounds[ii*NPEAK+6].limited[0] = bounds[ii*NPEAK+6].limited[1] = 0;
 			}
 			for (ii=0; ii<NBACK; ii++)
@@ -231,19 +232,25 @@ int main (int argc, char* argv[])
 			bounds[numridges[ij]*NPEAK+2].limited[0] = 1;
 			bounds[numridges[ij]*NPEAK+2].limited[1] = 0;
 			bounds[numridges[ij]*NPEAK+2].limits[0] = 0.0;
+			param[numridges[ij]*NPEAK+3] = 0.1;
+			bounds[numridges[ij]*NPEAK+3].limited[0] = bounds[numridges[ij]*NPEAK+3].limited[1] = 1;
+			bounds[numridges[ij]*NPEAK+3].limits[0] = -1.0;
+			bounds[numridges[ij]*NPEAK+3].limits[1] = 1.0;
+			param[numridges[ij]*NPEAK+4] = PI/2.0;
+			bounds[numridges[ij]*NPEAK+4].limited[0] = bounds[numridges[ij]*NPEAK+4].limited[1] = 0;
 
-			param[numridges[ij]*NPEAK+3] = 0.1*param[numridges[ij]*NPEAK];
-			bounds[numridges[ij]*NPEAK+3].limited[0] = 1;
-			bounds[numridges[ij]*NPEAK+3].limited[1] = 0;
-			bounds[numridges[ij]*NPEAK+3].limits[0] = 0.0;
-			param[numridges[ij]*NPEAK+4] = 1500.;
-			bounds[numridges[ij]*NPEAK+4].limited[0] = bounds[numridges[ij]*NPEAK+4].limited[1] = 1;
-			bounds[numridges[ij]*NPEAK+4].limits[0] = 200.;
-			bounds[numridges[ij]*NPEAK+4].limits[1] = nnu*delta_nu;
-			param[numridges[ij]*NPEAK+5] = 1000.;
-			bounds[numridges[ij]*NPEAK+5].limited[0] = bounds[numridges[ij]*NPEAK+5].limited[1] = 1;
-			bounds[numridges[ij]*NPEAK+5].limits[0] = 500.0;
-			bounds[numridges[ij]*NPEAK+5].limits[1] = 10000.;
+			param[numridges[ij]*NPEAK+5] = 0.1*param[numridges[ij]*NPEAK];
+			bounds[numridges[ij]*NPEAK+5].limited[0] = 1;
+			bounds[numridges[ij]*NPEAK+5].limited[1] = 0;
+			bounds[numridges[ij]*NPEAK+5].limits[0] = 0.0;
+			param[numridges[ij]*NPEAK+6] = 1500.;
+			bounds[numridges[ij]*NPEAK+6].limited[0] = bounds[numridges[ij]*NPEAK+6].limited[1] = 1;
+			bounds[numridges[ij]*NPEAK+6].limits[0] = 200.;
+			bounds[numridges[ij]*NPEAK+6].limits[1] = nnu*delta_nu;
+			param[numridges[ij]*NPEAK+7] = 1000.;
+			bounds[numridges[ij]*NPEAK+7].limited[0] = bounds[numridges[ij]*NPEAK+7].limited[1] = 1;
+			bounds[numridges[ij]*NPEAK+7].limits[0] = 500.0;
+			bounds[numridges[ij]*NPEAK+7].limits[1] = 10000.;
 
 			subsection.par = &par;
 			
@@ -258,14 +265,17 @@ int main (int argc, char* argv[])
 			subsection.delta_nu = delta_nu;
 			subsection.ntheta = ntheta;
 			subsection.k = (ij+1)*delta_k;
-			subsection.data = malloc((subsection.end-subsection.start+1)*sizeof(float*));
-			subsection.noise = malloc((subsection.end-subsection.start+1)*sizeof(float*));
+			subsection.data = malloc((subsection.end-subsection.start+1)*sizeof(double*));
+			subsection.noise = malloc((subsection.end-subsection.start+1)*sizeof(double*));
 			for (ii=subsection.start; ii<=subsection.end; ii++)
 			{
-				subsection.data[ii-subsection.start] = malloc(ntheta*sizeof(float));
-				memcpy(subsection.data[ii-subsection.start], pol[ii][ij], ntheta*sizeof(float));
-				subsection.noise[ii-subsection.start] = malloc(ntheta*sizeof(float));
-				memcpy(subsection.noise[ii-subsection.start], noise[ii][ij], ntheta*sizeof(float));
+				subsection.data[ii-subsection.start] = malloc(ntheta*sizeof(double));
+				subsection.noise[ii-subsection.start] = malloc(ntheta*sizeof(double));
+				for (ik=0; ik<ntheta; ik++)
+				{
+					subsection.data[ii-subsection.start][ik] = pol[ii][ij][ik];
+					subsection.noise[ii-subsection.start][ik] = noise[ii][ij][ik];
+				}
 			}
 
 			/* Set optimization parameters */
@@ -343,15 +353,23 @@ int main (int argc, char* argv[])
 			/* Post-process fit parameters */
 			for (ii=0; ii<numridges[ij]; ii++)
 			{
-				if (param[ii*NPEAK+5] < 0.0) 
+				if (param[ii*NPEAK+5] < 0.0)
 				{
-					param[ii*NPEAK+6] += PI;
+					param[ii*NPEAK+6] += PI/2.0;
 					param[ii*NPEAK+5] = fabs(param[ii*NPEAK+5]);
 				}
-				while (param[ii*NPEAK+6] < 0.0)
-					param[ii*NPEAK+6] += TWOPI;
-				param[ii*NPEAK+6] = fmod(param[ii*NPEAK+6], TWOPI);
+				param[ii*NPEAK+6] = fmod(param[ii*NPEAK+6], PI);
+				if (param[ii*NPEAK+6] < 0.0)
+					param[ii*NPEAK+6] += PI;
 			}
+			if (param[numridges[ij]*NPEAK+3] < 0.0)
+			{
+				param[numridges[ij]*NPEAK+4] += PI/2.0;
+				param[numridges[ij]*NPEAK+3] = fabs(param[numridges[ij]*NPEAK+3]);
+			}
+			param[numridges[ij]*NPEAK+4] = fmod(param[numridges[ij]*NPEAK+4], PI);
+			if (param[numridges[ij]*NPEAK+4] < 0.0)
+				param[numridges[ij]*NPEAK+4] += PI;
 
 			/* Print fit debug */
 			if (par.debugfname) output_debug(&par, pol, noise, ntheta, nk, nnu, ij, ntheta*(subsection.end-subsection.start+1), 
@@ -370,7 +388,7 @@ int main (int argc, char* argv[])
 					{
 						printf("\tLine at %f deemed invalid: ", param[ii*NPEAK]);
 						printf("Width too small (%f)\n", param[ii*NPEAK+2]);
-					} else if (param[ii*NPEAK+2] > 665.) {
+					} else if (param[ii*NPEAK+2] > 800.) {
 						printf("\tLine at %f deemed invalid: ", param[ii*NPEAK]);
 						printf("Width too large (%f)\n", param[ii*NPEAK+2]);
 					} else if (abs(param[ii*NPEAK]-freq[ij][ii])/freq[ij][ii] >= 0.2) {
@@ -446,7 +464,7 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 {
 	struct kslice *sub;
 	int istw, iendw, num, iw, itht, ik;
-	double akt, w1, tht, den, x2, err, back, cost, sint;
+	double akt, w1, tht, den, x2, err, back, back2, cost, sint;
 	double *thtarr, *thtpow;
 	
 	sub = (struct kslice*) private;
@@ -462,10 +480,11 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 	{
 		w1 = iw*sub->delta_nu;
 		back = p[n-3]*p[n-1]/((w1-p[n-2])*(w1-p[n-2]) + 0.25*p[n-1]*p[n-1]);
-		back += p[n-6]/(1.0+pow(p[n-5]*w1, p[n-4]));
+		back2 = 1.0/(1.0+pow(p[n-7]*w1, p[n-6]));
 		for (itht=0; itht<sub->ntheta; itht++)
 		{
-			deviates[num] = back;
+			tht = TWOPI*itht/sub->ntheta;
+			deviates[num] = back + back2*p[n-8]*(1.0 + p[n-5]*cos(2.0*(tht-p[n-4])));
 			num++;
 		}
 	}
@@ -479,7 +498,7 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 		{
 			tht = TWOPI*itht/sub->ntheta;
 			thtarr[itht] = akt*(p[ik*NPEAK+3]*cos(tht)+p[ik*NPEAK+4]*sin(tht))/TWOPI - p[ik*NPEAK];
-			thtpow[itht] = 0.5*p[ik*NPEAK+2]*(p[ik*NPEAK+1] + p[ik*NPEAK+5]*cos(2.0*tht-p[ik*NPEAK+6]));
+			thtpow[itht] = 0.5*p[ik*NPEAK+2]*p[ik*NPEAK+1]*(1.0+p[ik*NPEAK+5]*cos(2.0*(tht-p[ik*NPEAK+6])));
 		}
 		/* Loop over each nu, then theta */
 		for (iw=istw; iw<=iendw; iw++)
