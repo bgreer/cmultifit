@@ -70,13 +70,14 @@ void compute_noise_const (double*** pol, double*** noise, int nnu, int nk, int n
 	using only smallest scale wavelet components*/
 void compute_noise_wavelet (double*** pol, double*** noise, int nnu, int nk, int ntheta)
 {
-	int ii, ij, ik, il;
-	double* data;
+	int ii, ij, ik, il, offset;
+	double* data, frontavg, backavg, count;
 	unsigned int n;
 	gsl_wavelet *w;
 	gsl_wavelet_workspace *work;
 
 	n = powerof2(nnu);
+	offset = (n-nnu)/2;
 	data = (double*) calloc(n,sizeof(double));
 	
 	/* prepare for wavelet transforms */
@@ -86,11 +87,35 @@ void compute_noise_wavelet (double*** pol, double*** noise, int nnu, int nk, int
 	{
 		for (ik=0; ik<ntheta; ik++)
 		{
-			/* fill data array with spectrum data, pad end with 0s */
+			/* find frontavg, backavg */
+			frontavg = backavg = 0.0;
+			count = 0.0;
+			for (ii=0; ii<10; ii++)
+			{
+				if (pol[ii][ij][ik] > 0.0)
+				{
+					count += 1.0;
+					frontavg += pol[ii][ij][ik];
+				}
+			}
+			frontavg /= count;
+			count = 0.0;
+			for (ii=nnu-10; ii<nnu; ii++)
+			{
+				if (pol[ii][ij][ik] > 0.0)
+				{
+					count += 1.0;
+					backavg += pol[ii][ij][ik];
+				}
+			}
+			backavg /= count;
+			/* fill data array with spectrum data, pad ends */
 			for (ii=0; ii<nnu; ii++)
-				data[ii] = pol[ii][ij][ik];
-			for (ii=nnu; ii<n; ii++)
-				data[ii] = pol[nnu-1][ij][ik];
+				data[ii+offset] = pol[ii][ij][ik];
+			for (ii=0; ii<offset; ii++)
+				data[ii] = frontavg;
+			for (ii=nnu+offset; ii<n; ii++)
+				data[ii] = backavg;
 
 			for (ii=0; ii<nnu; ii++)
 			{
@@ -101,25 +126,25 @@ void compute_noise_wavelet (double*** pol, double*** noise, int nnu, int nk, int
 			gsl_wavelet_transform_forward (w, data, 1, n, work);
 			
 			/* filter in wavelet space(?) */
-			for (ii=0; ii<n/4; ii++)
+			for (ii=0; ii<n/2; ii++)
 				data[ii] = 0.0;
 			
 			/* transform back */
 			gsl_wavelet_transform_inverse (w, data, 1, n, work);
 
 			/* compute stdev */
-			for (ii=5; ii<nnu-5; ii++)
+			for (ii=4; ii<nnu-4; ii++)
 			{
 				noise[ii][ij][ik] = 0.0;
-				for (il=-5; il<=5; il++)
-					noise[ii][ij][ik] += (data[ii+il])*(data[ii+il]);
-				noise[ii][ij][ik] = sqrt(noise[ii][ij][ik]/11.);
+				for (il=-4; il<=4; il++)
+					noise[ii][ij][ik] += (data[ii+offset+il])*(data[ii+offset+il]);
+				noise[ii][ij][ik] = sqrt(noise[ii][ij][ik]/9.);
 			}
 			/* fill ends */
-			for (ii=0; ii<5; ii++)
-				noise[ii][ij][ik] = noise[5][ij][ik];
-			for (ii=nnu-5; ii<nnu; ii++)
-				noise[ii][ij][ik] = noise[nnu-6][ij][ik];
+			for (ii=0; ii<4; ii++)
+				noise[ii][ij][ik] = noise[4][ij][ik];
+			for (ii=nnu-4; ii<nnu; ii++)
+				noise[ii][ij][ik] = noise[nnu-5][ij][ik];
 		}
 	}
 	free(data);

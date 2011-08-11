@@ -17,7 +17,7 @@ int main (int argc, char* argv[])
 	int ii, ij, ik;
 	int ntheta, nk, nnu;
 	double delta_nu, delta_k;
-	double ***pol, ***noise;
+	double ***pol, ***noise, *norm;
 	double **freq, **amp, **width;
 	float readfreq, readamp, readwidth, readk;
 	int *numridges;
@@ -45,6 +45,13 @@ int main (int argc, char* argv[])
 	/* Open FITS file and read keys */
 	if (read_fits_file(&pol, &noise, &par, &ntheta, &nk, &nnu, &delta_k, &delta_nu)==EXIT_FAILURE)
 		return EXIT_FAILURE;
+	thtarr = malloc(ntheta*sizeof(double));
+	thtpow = malloc(ntheta*sizeof(double));
+
+	/* Normalize spectrum */
+	norm = (double*) calloc(nk, sizeof(double));
+	/*normalize(&pol, &norm, nnu, nk, ntheta);*/
+
 	/* TODO: Check kstart and kend */
 	if (par.kend >= nk) par.kend = nk-1;
 
@@ -465,14 +472,11 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 	struct kslice *sub;
 	int istw, iendw, num, iw, itht, ik;
 	double akt, w1, tht, den, x2, err, back, back2, cost, sint;
-	double *thtarr, *thtpow;
 	
 	sub = (struct kslice*) private;
 	istw = sub->start;
 	iendw = sub->end;
 	akt = sub->k;
-	thtarr = malloc(sub->ntheta*sizeof(double));
-	thtpow = malloc(sub->ntheta*sizeof(double));
 
 	/* Add background first */
 	num = 0;
@@ -533,7 +537,7 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 					case WEIGHT_MAXL:
 						deviates[num] = sub->data[iw-istw][itht]/deviates[num];
 						deviates[num] -= log(deviates[num]);
-						/*deviates[num] = sqrt(deviates[num]);*/
+						deviates[num] = sqrt(deviates[num]);
 						break;
 				}
 			} else {
@@ -542,9 +546,24 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 			num++;
 		}
 	}
-
-	free(thtarr);
-	free(thtpow);
 	return EXIT_SUCCESS;
 }
 
+/* Normalize spectrum by average at constant k */
+void normalize (double ****spec, double** norm, int nnu, int nk, int ntheta)
+{
+	int ii, ij, ik;
+	double sum;
+
+	for (ij=0; ij<nk; ij++)
+	{
+		sum = 0.0;
+		for (ii=0; ii<nnu; ii++)
+			for (ik=0; ik<ntheta; ik++)
+				sum += (*spec)[ii][ij][ik];
+		(*norm)[ij] = sum/(nnu*ntheta);
+		for (ii=0; ii<nnu; ii++)
+			for (ik=0; ik<ntheta; ik++)
+				(*spec)[ii][ij][ik] /= (*norm)[ij];
+	}
+}

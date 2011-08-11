@@ -1,14 +1,14 @@
 # Parameter file for cmultifit (# starts a comment)
 
 # first line is main spectrum to read
-../hmi/new_su_rsb.avgpspec_fd15.2099.+00.0.+30.0.mean.fits
+../hmi/new_su_rsb.avgpspec_fd15.2099.+00.0.+00.0.mean.fits
 #../simring/4deg/spec_180.00_+00.00_pr.fits
 
 # second line is model file
 hmi_trunc.model
 
 # third line is the file to output to
-out
+out01
 
 # fourth is silent mode (1 = silent)
 0
@@ -62,6 +62,7 @@ debug
 # Format (3 columns):
 # i	j	log10(abs(cov(i,j)))
 covar
+
 # To easily plot, use gnuplot:
 # set pm3d map
 # splot 'covar'

@@ -2,7 +2,7 @@
 #include <math.h>
 #include "header.h"
 
-void output_debug (struct params* p, double ***pol, double ***noise, int ntheta, int nk, int nnu, int k, int m, int n, double* x, float delta_nu, float delta_k)
+void output_debug (struct params* p, double ***pol, double ***noise, int ntheta, int nk, int nnu, int k, int m, int n, double* x, double delta_nu, double delta_k)
 {
 	FILE* fp;
 	int ii, ik, ij, num;
@@ -145,7 +145,7 @@ int read_fits_file (double ****spec, double ****noise, struct params* p,
 			for (ik=0; ik<(*ntheta); ik++)
 			{
 				if (buff[ik] < 0.0 || isnan(buff[ik])) buff[ik] = 0.0;
-				(*spec)[coords[2]-1][coords[1]-1][ik] = buff[ik] * 1.0e7;
+				(*spec)[coords[2]-1][coords[1]-1][ik] = buff[ik];
 			}
 		}
 	}

@@ -7,7 +7,7 @@
 
 /* TODO: make these use same weighting as multifit */
 
-int fit_peak (struct params* p, double *freq, double *amp, double *width, double*** pol, double*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k)
+int fit_peak (struct params* p, double *freq, double *amp, double *width, double*** pol, double*** noise, double delta_nu, double delta_k, int nnu, int ntheta, int k)
 {
 	int ii, ij, ik, mpreturn;
 	double *param, *xerror;
@@ -27,8 +27,8 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 
 	/* Load subsection data */
 	sub.par = p;
-	sub.start = (param[0] - 2.0*param[2])/delta_nu;
-	sub.end = (param[0] + 2.0*param[2])/delta_nu;
+	sub.start = (param[0] - 1.0*param[2])/delta_nu;
+	sub.end = (param[0] + 1.0*param[2])/delta_nu;
 	if (sub.start < 0) sub.start = 0;
 	if (sub.end >= nnu) sub.end = nnu-1;
 	sub.ntheta = ntheta;
@@ -139,7 +139,6 @@ int funk_single (int m, int n, double* p, double *deviates, double **derivs, voi
 						deviates[num] = sqrt(deviates[num]);
 						break;
 				}
-
 			}
 			num++;
 		}
@@ -147,7 +146,7 @@ int funk_single (int m, int n, double* p, double *deviates, double **derivs, voi
 	return 0;
 }
 
-int fit_back (struct params* p, double* amp, double* cutoff, double* power, double*** pol, double*** noise, float delta_nu, int nnu, int ntheta, int k)
+int fit_back (struct params* p, double* amp, double* cutoff, double* power, double*** pol, double*** noise, double delta_nu, int nnu, int ntheta, int k)
 {
 	int ii, ij, ik, mpreturn;
 	double *param;
@@ -159,7 +158,7 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, doub
 	param = (double*) malloc(3*sizeof(double));
 	
 	/* Determine starting guesses */
-	param[0] = pol[0][k][0];
+	param[0] = 10.0;
 	param[1] = 0.1;
 	param[2] = 2.0;
 
@@ -169,7 +168,7 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, doub
 	/* Load subsection data */
 	sub.par = p;
 	sub.start = 0;
-	sub.end = (800.)/delta_nu;
+	sub.end = (1000.)/delta_nu;
 	if (sub.end >= nnu) sub.end = nnu-1;
 	sub.ntheta = ntheta;
 	sub.delta_nu = delta_nu;
@@ -212,7 +211,7 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, doub
 	mpreturn = 0;
 	mpreturn = mpfit(&funk_back, ntheta*(sub.end-sub.start+1), 3, 
 					param, bounds, mpconf, &sub, mpres2);
-
+	
 	*amp = param[0];
 	*cutoff = param[1];
 	*power = param[2];
@@ -240,17 +239,21 @@ int funk_back (int m, int n, double* p, double *deviates, double **derivs, void 
 		back = p[0]/(1.+pow(p[1]*iw*sub->delta_nu,p[2]));
 		for (itht=0; itht<sub->ntheta; itht++)
 		{
-			switch (sub->par->chiweight)
+			deviates[num] = 0.0;
+			if (sub->data[iw-istw][itht] > 0.0)
 			{
-				case WEIGHT_NOISE:
-					deviates[num] = (back - sub->data[iw-istw][itht]);
-					deviates[num] /= sub->noise[iw-istw][itht];
-					break;
-				case WEIGHT_MAXL:
-					deviates[num] = sub->data[iw-istw][itht]/(back);
-					deviates[num] -= log(deviates[num]);
-					deviates[num] = sqrt(deviates[num]);
-					break;
+				switch (sub->par->chiweight)
+				{
+					case WEIGHT_NOISE:
+						deviates[num] = (back - sub->data[iw-istw][itht]);
+						deviates[num] /= sub->noise[iw-istw][itht];
+						break;
+					case WEIGHT_MAXL:
+						deviates[num] = sub->data[iw-istw][itht]/(back);
+						deviates[num] -= log(deviates[num]);
+						deviates[num] = sqrt(deviates[num]);
+						break;
+				}
 			}
 			num++;
 		}

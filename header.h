@@ -34,7 +34,7 @@ struct kslice
 {
 	double **data, **noise;
 	int start, end, ntheta;
-	float delta_nu, k;
+	double delta_nu, k;
 	struct params* par;
 };
 
@@ -48,9 +48,12 @@ struct params
 	char *debugfname, *covarfname, *backfname;
 };
 
+double *thtarr, *thtpow;
+
 /* main.c */
 double model (int numridges, double nu, double k, double theta, double* p);
 int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
+void normalize (double ****spec, double** norm, int nnu, int nk, int ntheta);
 
 /* noise.c */
 void compute_noise_smooth (double*** pol, double*** noise, int nnu, int nk, int ntheta, int radius);
@@ -60,15 +63,15 @@ unsigned int powerof2 (unsigned int n);
 
 /* fit.c */
 int fit_peak (struct params* p, double *freq, double *amp, double *width, 
-	double*** pol, double*** noise, float delta_nu, float delta_k, int nnu, int ntheta, int k);
+	double*** pol, double*** noise, double delta_nu, double delta_k, int nnu, int ntheta, int k);
 int funk_single(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 int fit_back (struct params* p, double* amp, double* cutoff, double* power, 
-	double*** pol, double*** noise, float delta_nu, int nnu, int ntheta, int k);
+	double*** pol, double*** noise, double delta_nu, int nnu, int ntheta, int k);
 int funk_back(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 
 /* io.c */
 void output_debug (struct params* p, double***pol, double***noise, int ntheta, 
-	int nk, int nnu, int k, int m, int n, double* x, float delta_nu, float delta_k);
+	int nk, int nnu, int k, int m, int n, double* x, double delta_nu, double delta_k);
 void output_covar (double* covar, int n, struct params* p);
 int read_fits_file (double**** spec, double**** noise, struct params* p, 
 		int* ntheta, int* nk, int* nnu, double* delta_k, double* delta_nu);
