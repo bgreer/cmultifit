@@ -207,11 +207,11 @@ int main (int argc, char* argv[])
 				bounds[ii*NPEAK+2].limits[1] = width[ij][ii]*4.0;
 
 				/* set velocities */
-				param[ii*NPEAK+3] = 1.0;
+				param[ii*NPEAK+3] = 200.0;
 				bounds[ii*NPEAK+3].limited[0] = bounds[ii*NPEAK+3].limited[1] = 1;
 				bounds[ii*NPEAK+3].limits[0] = -1000.0;
 				bounds[ii*NPEAK+3].limits[1] = 1000.0;
-				param[ii*NPEAK+4] = 1.0;
+				param[ii*NPEAK+4] = 200.0;
 				bounds[ii*NPEAK+4].limited[0] = bounds[ii*NPEAK+4].limited[1] = 1;
 				bounds[ii*NPEAK+4].limits[0] = -1000.0;
 				bounds[ii*NPEAK+4].limits[1] = 1000.0;
@@ -253,7 +253,7 @@ int main (int argc, char* argv[])
 			param[numridges[ij]*NPEAK+6] = 1500.;
 			bounds[numridges[ij]*NPEAK+6].limited[0] = bounds[numridges[ij]*NPEAK+6].limited[1] = 1;
 			bounds[numridges[ij]*NPEAK+6].limits[0] = 200.;
-			bounds[numridges[ij]*NPEAK+6].limits[1] = nnu*delta_nu;
+			bounds[numridges[ij]*NPEAK+6].limits[1] = 4000;/*nnu*delta_nu;*/
 			param[numridges[ij]*NPEAK+7] = 1000.;
 			bounds[numridges[ij]*NPEAK+7].limited[0] = bounds[numridges[ij]*NPEAK+7].limited[1] = 1;
 			bounds[numridges[ij]*NPEAK+7].limits[0] = 500.0;
@@ -409,8 +409,8 @@ int main (int argc, char* argv[])
 					} else {
 						fprintf(fpout, "%d\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\n", 
 							ij, 
-							ij*delta_k,
-							param[ii*NPEAK]/(ij*delta_k), 
+							(ij+1)*delta_k,
+							param[ii*NPEAK]/((ij+1)*delta_k), 
 							param[ii*NPEAK], xerror[ii*NPEAK+3], 
 							param[ii*NPEAK+1], xerror[ii*NPEAK+1], 
 							param[ii*NPEAK+2], xerror[ii*NPEAK+2], 

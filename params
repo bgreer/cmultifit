@@ -3,12 +3,13 @@
 # first line is main spectrum to read
 ../hmi/new_su_rsb.avgpspec_fd15.2099.+00.0.+00.0.mean.fits
 #../simring/4deg/spec_180.00_+00.00_pr.fits
+#../tests/hmi_5deg_9hr/new_5deg.fits
 
 # second line is model file
 hmi_trunc.model
 
 # third line is the file to output to
-out01
+out
 
 # fourth is silent mode (1 = silent)
 0
@@ -29,8 +30,7 @@ out01
 
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
-0 999
-
+0 99
 
 # Next are parameters for fit convergence
 

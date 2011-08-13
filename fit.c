@@ -73,6 +73,7 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 	mpconf->gtol = 1e-8;
 	mpconf->covtol = 1e-10;
 	mpconf->maxiter = 200;
+	mpconf->nofinitecheck = 1;
 
 	mpres2->xerror = xerror;
 	mpreturn = 1;
@@ -207,6 +208,7 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, doub
 	mpconf->gtol = p->gtol;
 	mpconf->covtol = 1e-10;
 	mpconf->maxiter = p->niter;
+	mpconf->nofinitecheck = 1;
 
 	mpreturn = 0;
 	mpreturn = mpfit(&funk_back, ntheta*(sub.end-sub.start+1), 3, 
