@@ -20,7 +20,7 @@ out
 #     no noise is computed, so next parameter is irrelevant.
 #	  Note: mpfit is not optimized for this, so it takes more iterations
 #	   you might want to increase the max # of iterations
-0
+1
 
 # sixth is noise estimator
 # 0 = constant, set as 0.1*(global average power)
@@ -30,7 +30,7 @@ out
 
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
-0 99
+0 999
 
 # Next are parameters for fit convergence
 
@@ -45,7 +45,7 @@ out
 
 # Max number of iterations.
 # If this number is hit before convergence, fit is deemed invalid
-200
+400
 
 
 # Next are filenames for debug output. Fair warning, they produce a lot of data

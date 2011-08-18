@@ -52,7 +52,6 @@ double *thtarr, *thtpow;
 
 /* main.c */
 double model (int numridges, double nu, double k, double theta, double* p);
-int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 void normalize (double ****spec, double** norm, int nnu, int nk, int ntheta);
 
 /* noise.c */
@@ -77,3 +76,6 @@ int read_fits_file (double**** spec, double**** noise, struct params* p,
 		int* ntheta, int* nk, int* nnu, double* delta_k, double* delta_nu);
 void read_param_file (char* fname, struct params* p);
 void trim (char* str);
+
+/* function.c */
+int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);

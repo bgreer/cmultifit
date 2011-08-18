@@ -126,13 +126,15 @@ void compute_noise_wavelet (double*** pol, double*** noise, int nnu, int nk, int
 			gsl_wavelet_transform_forward (w, data, 1, n, work);
 			
 			/* filter in wavelet space(?) */
-			for (ii=0; ii<n/2; ii++)
+			for (ii=0; ii<n/4; ii++)
 				data[ii] = 0.0;
 			
 			/* transform back */
 			gsl_wavelet_transform_inverse (w, data, 1, n, work);
-
-			/* compute stdev */
+/*if (ik==0 && ij==20)
+	for (ii=0; ii<n; ii++)
+		printf("%d\t%e\n", ii, data[ii]);
+*/			/* compute stdev */
 			for (ii=4; ii<nnu-4; ii++)
 			{
 				noise[ii][ij][ik] = 0.0;
