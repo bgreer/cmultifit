@@ -4,7 +4,7 @@
 int funk (int m, int n, double* p, double *deviates, double **derivs, void *private)
 {
 	struct kslice *sub;
-	int istw, iendw, num, iw, itht, ik;
+	int istw, iendw, num, iw, itht, ik, ii;
 	double akt, w1, tht, den, x2, err, back, back2, cost, sint;
 	
 	sub = (struct kslice*) private;
@@ -80,6 +80,46 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 			num++;
 		}
 	}
+
+	if (derivs) calc_derivs(m, n, p, deviates, derivs, private);
+
 	return EXIT_SUCCESS;
 }
 
+void calc_derivs (int m, int n, double* p, double *deviates, double **derivs, void *private)
+{
+	int num, ii, ij, itht, ik, iw, istw, iendw, ridgenum, param;
+	struct kslice *sub;
+
+	sub = (struct kslice*) private;
+
+	/* Pre-compute things */
+
+	/* For each deviate_ij, compute derivative wrt parameter_ii */
+	num = 0;
+	for (iw=istw; iw<=iendw; iw++)
+	{
+		for (itht=0; itht<sub->ntheta; itht++)
+		{
+			for (ii=0; ii<n; ii++)
+			{
+				if (derivs[ii]) /* Setting derivs[ii][num] */
+				{
+					ridgenum = ii/NPEAK;
+					if (ridgenum < (n-NBACK)/NPEAK)
+					{
+						/* Peak Parameters */
+						param = ii-ridgenum*NPEAK;
+						if (param==1)
+						{
+							
+						}
+					} else {
+						/* Background Parameters */
+					}
+				}
+			}
+			num++;
+		}
+	}
+}

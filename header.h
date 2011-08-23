@@ -79,3 +79,4 @@ void trim (char* str);
 
 /* function.c */
 int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
+void calc_derivs (int m, int n, double* p, double *deviates, double **derivs, void *private_data);
