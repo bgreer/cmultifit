@@ -89,37 +89,47 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 void calc_derivs (int m, int n, double* p, double *deviates, double **derivs, void *private)
 {
 	int num, ii, ij, itht, ik, iw, istw, iendw, ridgenum, param;
+	double lor, **slice;
 	struct kslice *sub;
 
 	sub = (struct kslice*) private;
+	istw = sub->start;
+	iendw = sub->end;
+	slice = (double**) malloc((iendw-istw+1)*sizeof(double*));
+	for (ii=0; ii<iendw-istw+1; ii++)
+		slice[ii] = (double*) malloc((sub->ntheta)*sizeof(double));
 
 	/* Pre-compute things */
 
+
 	/* For each deviate_ij, compute derivative wrt parameter_ii */
-	num = 0;
-	for (iw=istw; iw<=iendw; iw++)
+	for (ii=0; ii<(n-NBACK)/NPEAK; ii++)
 	{
-		for (itht=0; itht<sub->ntheta; itht++)
+		/* Pre-compute lorentzian */
+		for (iw=istw; iw<=iendw; iw++)
 		{
-			for (ii=0; ii<n; ii++)
+			for (itht=0; itht<sub->ntheta; itht++)
 			{
-				if (derivs[ii]) /* Setting derivs[ii][num] */
+				slice[][] = 0.0;
+			}
+		}
+
+		/* Calculate derivatives of each parameter as needed */
+		if (derivs[ii]) /* Frequency */
+		{}
+		if (derivs[ii+1]) /* Amplitude */
+		{
+			num = 0;
+			for (iw=istw; iw<=iendw; iw++)
+			{
+				for (itht=0; itht<sub->ntheta; itht++)
 				{
-					ridgenum = ii/NPEAK;
-					if (ridgenum < (n-NBACK)/NPEAK)
-					{
-						/* Peak Parameters */
-						param = ii-ridgenum*NPEAK;
-						if (param==1)
-						{
-							
-						}
-					} else {
-						/* Background Parameters */
-					}
+					derivs[ii+1][num] = slice[iw][itht]/p[ii+1];
+					num++;
 				}
 			}
-			num++;
 		}
+		if (derivs[ii+2]) /* Width */
+		{}
 	}
 }
