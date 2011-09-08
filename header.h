@@ -1,7 +1,7 @@
 #include "fitsio.h"
 #include "mpfit.h"
 
-#define NPEAK (7) /* number of parameters for each peak */
+#define NPEAK (8) /* number of parameters for each peak */
 #define NBACK (8) /* number of parameters for background terms */
 
 /* Set order of parameters in parameter file */
@@ -48,7 +48,7 @@ struct params
 	char *debugfname, *covarfname, *backfname;
 };
 
-double *thtarr, *thtpow;
+double *thtarr, *thtpow, *rdeviates, *ideviates;
 
 /* main.c */
 double model (int numridges, double nu, double k, double theta, double* p);
@@ -79,4 +79,5 @@ void trim (char* str);
 
 /* function.c */
 int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
+int funk_corr(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 void calc_derivs (int m, int n, double* p, double *deviates, double **derivs, void *private_data);

@@ -3,7 +3,7 @@
 # first line is main spectrum to read
 ../hmi/new_su_rsb.avgpspec_fd15.2099.+00.0.+00.0.mean.fits
 #../simring/4deg/spec_180.00_+00.00_pr.fits
-#../tests/hmi_5deg_9hr/new_5deg.fits
+#../tests/hmi_2.5deg_9hr/new_2.5deg.fits
 
 # second line is model file
 hmi_trunc.model
@@ -20,7 +20,7 @@ out
 #     no noise is computed, so next parameter is irrelevant.
 #	  Note: mpfit is not optimized for this, so it takes more iterations
 #	   you might want to increase the max # of iterations
-1
+0
 
 # sixth is noise estimator
 # 0 = constant, set as 0.1*(global average power)

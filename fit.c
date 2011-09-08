@@ -84,12 +84,6 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 	*amp = param[1];/**2000./param[0];*/
 	*width = param[2];
 
-	free(param);
-	free(bounds);
-	free(xerror);
-	free(mpres2);
-	free(mpconf);
-
 	FILE *fp;
 	double den;
 	fp = fopen("debug2", "w");
@@ -100,7 +94,20 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 		fprintf(fp, "%f\t%f\t%f\n", ii*delta_nu, param[3]+(*amp)*(*width)/(2.0*den), sub.data[ii-sub.start][0]);
 	}
 	fclose(fp);
-	
+
+	free(param);
+	free(bounds);
+	free(xerror);
+	free(mpres2);
+	free(mpconf);
+	for (ii=sub.start; ii<=sub.end; ii++)
+	{
+		free(sub.data[ii-sub.start]);
+		free(sub.noise[ii-sub.start]);
+	}
+	free(sub.data);
+	free(sub.noise);
+
 	return 0;
 }
 
@@ -222,6 +229,13 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, doub
 	free(bounds);
 	free(mpres2);
 	free(mpconf);
+	for (ii=sub.start; ii<=sub.end; ii++)
+	{
+		free(sub.data[ii-sub.start]);
+		free(sub.noise[ii-sub.start]);
+	}
+	free(sub.data);
+	free(sub.noise);
 	return 0;
 }
 

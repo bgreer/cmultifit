@@ -44,6 +44,7 @@ void compute_noise_smooth (double*** pol, double*** noise,
 				noise[ii][ij][ik] = 0.1*sum/weight;
 		}
 	}
+	free(gauss);
 }
 
 /* Computes noise to be 0.1*(average power at constant k) */
