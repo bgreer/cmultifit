@@ -233,7 +233,7 @@ int main (int argc, char* argv[])
 				bounds[ii*NPEAK+6].fixed = 1;
 
 				/* set imaginary amplitude */
-				param[ii*NPEAK+7] = amp[ij][ii]*0.1;
+				param[ii*NPEAK+7] = amp[ij][ii]*10.0;
 				bounds[ii*NPEAK+7].limited[0] = bounds[ii*NPEAK+7].limited[1] = 0;
 			}
 			for (ii=0; ii<NBACK; ii++)
@@ -393,7 +393,7 @@ int main (int argc, char* argv[])
 				param[numridges[ij]*NPEAK+4] += PI;
 
 			/* Print fit debug */
-			if (par.debugfname) output_debug_corr(&par, pol, noise, ntheta, nk, nnu, ij, ntheta*(subsection.end-subsection.start+1), 
+			if (par.debugfname) output_debug(&par, pol, noise, ntheta, nk, nnu, ij, ntheta*(subsection.end-subsection.start+1), 
 					numridges[ij]*NPEAK+NBACK, 
 					param, delta_nu, delta_k);
 		
@@ -472,6 +472,19 @@ int main (int argc, char* argv[])
 	if (par.backfname) fclose(fpback);
 	
 	/* Free ALL THE THINGS */
+	for (ii=0; ii<nk; ii++)
+	{
+		if (numridges[ii]>0)
+		{
+			free(freq[ii]);
+			free(amp[ii]);
+			free(width[ii]);
+		}
+	}
+	free(freq);
+	free(amp);
+	free(width);
+	free(numridges);
 	free(mpres);
 	free(mpconf);
 	free(thtarr);
@@ -489,7 +502,12 @@ int main (int argc, char* argv[])
 			free(pol[ii][ij]);
 			free(noise[ii][ij]);
 		}
+		free(pol[ii]);
+		free(noise[ii]);
 	}
+	free(pol);
+	free(noise);
+	free(norm);
 	return EXIT_SUCCESS;
 }
 

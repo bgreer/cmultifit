@@ -8,7 +8,7 @@
 	 (plus cross derivatives)
 	Invert this matrix, output as covariance.
 */
-
+/*
 double*** covariance (int numridges, double *p, double ***spec)
 {
 	double** A;
@@ -19,10 +19,9 @@ double*** covariance (int numridges, double *p, double ***spec)
 		A[ii] = malloc((NPEAK*numridges+NBACK)*sizeof(double));
 	
 	hessian (&A, p, spec);
-
 	return &A;
 }
-
+*/
 /* 
 	A = empty square matrix
 	p = final parameter values

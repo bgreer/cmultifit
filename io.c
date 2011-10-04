@@ -50,7 +50,7 @@ void output_debug_corr (struct params* p, double ***pol, double ***noise, int nt
 	for (ii=0; ii<nnu; ii++)
 	{
 		back1 = back2 = back = fit = ifit = sp = no = funk = 0.0;
-		for (ik=0; ik<1; ik++)
+		for (ik=0; ik<ntheta; ik++)
 		{
 			fit = ifit = 0.0;
 			back1 = x[n-8]*(1.0+x[n-5]*cos(2.0*(TWOPI*ik/ntheta - x[n-4])))/(1.0+pow(x[n-7]*ii*delta_nu,x[n-6]));
