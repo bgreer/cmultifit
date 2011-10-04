@@ -30,7 +30,7 @@ out
 
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
-21 21
+0 999
 
 # Next are parameters for fit convergence
 
@@ -72,3 +72,7 @@ covar
 # Format (8 columns):
 # k-bin	k	par0	par1	par2	par3	par4	par5
 backcoefs
+
+# Perform fits
+# Useful for testing the model file
+1

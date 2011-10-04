@@ -1,7 +1,7 @@
 #include "fitsio.h"
 #include "mpfit.h"
 
-#define NPEAK (8) /* number of parameters for each peak */
+#define NPEAK (7) /* number of parameters for each peak */
 #define NBACK (8) /* number of parameters for background terms */
 
 /* Set order of parameters in parameter file */
@@ -19,6 +19,7 @@
 #define PARAM_DEBUG (11)
 #define PARAM_COVAR (12)
 #define PARAM_BACK (13)
+#define PARAM_FIT (14)
 
 /* Set which values correspond to which modes */
 #define WEIGHT_NOISE (0)
@@ -41,14 +42,14 @@ struct kslice
 struct params
 {
 	char *fitsfname, *modelfname, *outfname;
-	int silent, chiweight, noisemode;
+	int silent, chiweight, noisemode, dofits;
 	int kstart, kend;
 	double ftol, xtol, gtol;
 	int niter;
 	char *debugfname, *covarfname, *backfname;
 };
 
-double *thtarr, *thtpow, *rdeviates, *ideviates;
+double *thtarr, *thtpow;
 
 /* main.c */
 double model (int numridges, double nu, double k, double theta, double* p);
@@ -79,5 +80,4 @@ void trim (char* str);
 
 /* function.c */
 int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
-int funk_corr(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 void calc_derivs (int m, int n, double* p, double *deviates, double **derivs, void *private_data);

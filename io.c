@@ -286,6 +286,9 @@ void read_param_file (char* fname, struct params* p)
 						strcpy(p->backfname, buffer);
 					}
 					break;
+				case PARAM_FIT:
+					p->dofits = atoi(buffer);
+					break;
 			}
 			index++;
 		}

@@ -165,8 +165,9 @@ int main (int argc, char* argv[])
 			if (!par.silent) printf("\tDoing single ridge estimates.\n");
 			for (ii=0; ii<numridges[ij]; ii++)
 			{
-				fit_peak(&par, &(freq[ij][ii]), &(amp[ij][ii]), &(width[ij][ii]), pol, noise, 
-					delta_nu, delta_k, nnu, ntheta, ij);
+				if (par.dofits)
+					fit_peak(&par, &(freq[ij][ii]), &(amp[ij][ii]), &(width[ij][ii]), pol, noise, 
+						delta_nu, delta_k, nnu, ntheta, ij);
 			}
 			
 			/* Do rough fit of background */
@@ -200,9 +201,9 @@ int main (int argc, char* argv[])
 
 				/* set amplitude */
 				param[ii*NPEAK+1] = amp[ij][ii];
-				bounds[ii*NPEAK+1].limited[0] = 0;
+				bounds[ii*NPEAK+1].limited[0] = 1;
 				bounds[ii*NPEAK+1].limited[1] = 0;
-				/*bounds[ii*NPEAK+1].limits[0] = 0.0;*/ /* dont go below 0 */
+				bounds[ii*NPEAK+1].limits[0] = 0.0; /* dont go below 0 */
 
 				/* set width */
 				param[ii*NPEAK+2] = width[ij][ii];
@@ -227,15 +228,8 @@ int main (int argc, char* argv[])
 				bounds[ii*NPEAK+5].limits[1] = 1.0;
 				param[ii*NPEAK+6] = PI/2.0;
 				bounds[ii*NPEAK+6].limited[0] = bounds[ii*NPEAK+6].limited[1] = 0;
-
-				/* TEMPORARY: fix theta variation */
-				bounds[ii*NPEAK+5].fixed = 1;
-				bounds[ii*NPEAK+6].fixed = 1;
-
-				/* set imaginary amplitude */
-				param[ii*NPEAK+7] = amp[ij][ii]*10.0;
-				bounds[ii*NPEAK+7].limited[0] = bounds[ii*NPEAK+7].limited[1] = 0;
 			}
+
 			for (ii=0; ii<NBACK; ii++)
 			{
 				bounds[numridges[ij]*NPEAK+ii].fixed = 0;
@@ -296,8 +290,6 @@ int main (int argc, char* argv[])
 					subsection.noise[ii-subsection.start][ik] = noise[ii][ij][ik];
 				}
 			}
-			rdeviates = malloc(ntheta*(subsection.end-subsection.start+1)*sizeof(double));
-			ideviates = malloc(ntheta*(subsection.end-subsection.start+1)*sizeof(double));
 
 			/* Set optimization parameters */
 			mpconf->ftol = par.ftol;
@@ -313,7 +305,7 @@ int main (int argc, char* argv[])
 /* Perform optimization */
 			if (!par.silent) printf("\tDoing multifit.\n");
 
-			mpreturn = mpfit(&funk_corr, 
+			if (par.dofits) mpreturn = mpfit(&funk, 
 					ntheta*(subsection.end-subsection.start+1), 
 					numridges[ij]*NPEAK+NBACK, 
 					param, 
@@ -456,8 +448,6 @@ int main (int argc, char* argv[])
 			free(param);
 			free(bounds);
 			free(xerror);
-			free(rdeviates);
-			free(ideviates);
 			for (ii=subsection.start; ii<=subsection.end; ii++)
 			{
 				free(subsection.data[ii-subsection.start]);
