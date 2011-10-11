@@ -58,7 +58,6 @@ void normalize (double ****spec, double** norm, int nnu, int nk, int ntheta);
 /* noise.c */
 void compute_noise_smooth (double*** pol, double*** noise, int nnu, int nk, int ntheta, int radius);
 void compute_noise_const (double***pol, double*** noise, int nnu, int nk, int ntheta);
-void compute_noise_wavelet (double*** pol, double*** noise, int nnu, int nk, int ntheta);
 unsigned int powerof2 (unsigned int n);
 
 /* fit.c */

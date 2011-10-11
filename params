@@ -20,17 +20,17 @@ out
 #     no noise is computed, so next parameter is irrelevant.
 #	  Note: mpfit is not optimized for this, so it takes more iterations
 #	   you might want to increase the max # of iterations
-0
+1
 
 # sixth is noise estimator
 # 0 = constant, set as 0.1*(global average power)
 # 1 = smoothed, set as 0.1*(local average power)
 # 2 = wavelet, uses WT to estimate noise using smallest scale fluctuations
-2
+0
 
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
-0 999
+30 30
 
 # Next are parameters for fit convergence
 

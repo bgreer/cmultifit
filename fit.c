@@ -20,7 +20,7 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 	param[0] = *freq;
 	param[1] = *amp;
 	param[2] = *width;
-	param[3] = *amp;
+	param[3] = (*amp);
 
 	mpres2 = (mp_result*) calloc(1,sizeof(mp_result));
 	mpconf = (mp_config*) calloc(1, sizeof(mp_config));
@@ -67,6 +67,9 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 	bounds[2].limited[0] = bounds[2].limited[1] = 1;
 	bounds[2].limits[0] = param[2]/4.;
 	bounds[2].limits[1] = param[2]*4.;
+	bounds[3].limited[0] = 1;
+	bounds[3].limited[1] = 0;
+	bounds[3].limits[0] = 0.0;
 
 	mpconf->ftol = 1e-8;
 	mpconf->xtol = 1e-4;
@@ -79,9 +82,9 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 	mpreturn = 1;
 	mpreturn = mpfit(&funk_single, ntheta*(sub.end-sub.start+1), 4, 
 					param, bounds, mpconf, &sub, mpres2);
-
+	printf("%d\n", mpreturn);
 	*freq = param[0];
-	*amp = param[1];/**2000./param[0];*/
+	*amp = param[1];/**20.;*param[0];*/
 	*width = param[2];
 
 	FILE *fp;
@@ -134,20 +137,21 @@ int funk_single (int m, int n, double* p, double *deviates, double **derivs, voi
 			{
 				den = w1 - p[0];
 				den = den*den + p[2]*p[2]/4.0;
-				x2 = p[1]*p[2]/(2.0*den) + p[3];
-				switch (sub->par->chiweight)
+				x2 = p[1]*p[2]/(2.0*den)+p[3];
+		/*		switch (sub->par->chiweight)
 				{
 					case WEIGHT_NOISE:
-						deviates[num] = (x2 - sub->data[iw-istw][itht]);
+		*/				deviates[num] = (x2 - sub->data[iw-istw][itht]);
 						deviates[num] /= sub->noise[iw-istw][itht];
-						break;
+		/*				break;
 					case WEIGHT_MAXL:
 						deviates[num] = sub->data[iw-istw][itht]/(x2);
 						deviates[num] -= log(deviates[num]);
-						deviates[num] = sqrt(deviates[num]);
+						deviates[num] -= log(sub->data[iw-istw][itht]);
+						deviates[num] = 1.0/(deviates[num]);
 						break;
 				}
-			}
+		*/	}
 			num++;
 		}
 	}
@@ -258,19 +262,19 @@ int funk_back (int m, int n, double* p, double *deviates, double **derivs, void 
 			deviates[num] = 0.0;
 			if (sub->data[iw-istw][itht] > 0.0)
 			{
-				switch (sub->par->chiweight)
+			/*	switch (sub->par->chiweight)
 				{
 					case WEIGHT_NOISE:
-						deviates[num] = (back - sub->data[iw-istw][itht]);
+			*/			deviates[num] = (back - sub->data[iw-istw][itht]);
 						deviates[num] /= sub->noise[iw-istw][itht];
-						break;
+			/*			break;
 					case WEIGHT_MAXL:
 						deviates[num] = sub->data[iw-istw][itht]/(back);
 						deviates[num] -= log(deviates[num]);
 						deviates[num] = sqrt(deviates[num]);
 						break;
 				}
-			}
+		*/	}
 			num++;
 		}
 	}

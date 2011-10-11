@@ -48,10 +48,6 @@ int main (int argc, char* argv[])
 	thtarr = malloc(ntheta*sizeof(double));
 	thtpow = malloc(ntheta*sizeof(double));
 
-	/* Normalize spectrum */
-	norm = (double*) calloc(nk, sizeof(double));
-	/*normalize(&pol, &norm, nnu, nk, ntheta);*/
-
 	/* TODO: Check kstart and kend */
 	if (par.kstart > par.kend) par.kend = par.kstart;
 	if (par.kstart < 0) par.kstart = 0;
@@ -122,9 +118,14 @@ int main (int argc, char* argv[])
 				compute_noise_smooth(pol, noise, nnu, nk, ntheta, (800.)/delta_nu);
 				break;
 			case NOISE_WAVELET:
-				compute_noise_wavelet(pol, noise, nnu, nk, ntheta);
+				printf("ERROR: wavelet noise not supported in this version.\n");
+				return EXIT_FAILURE;
 				break;
 		}
+	} else {
+		printf("WARNING: Maximum likelihood uncertainties not yet implemented!\n");
+		printf("\tReported error bars will be garbage.\n");
+		compute_noise_const(pol, noise, nnu, nk, ntheta);
 	}
 
 /* Open output file */
@@ -500,25 +501,6 @@ int main (int argc, char* argv[])
 	free(norm);
 	return EXIT_SUCCESS;
 }
-
-double model (int numridges, double nu, double k, double theta, double* p)
-{
-	int ii;
-	double ret, den;
-
-	ret = 0.0;
-	for (ii=0; ii<numridges; ii++)
-	{
-		den = nu + k*(p[ii*NPEAK+3]*cos(theta)+p[ii*NPEAK+4]*sin(theta))/6.28318531 - p[ii*NPEAK];
-		den = den*den + p[ii*NPEAK+2]*p[ii*NPEAK+2]/4.0;
-		ret += p[ii*NPEAK+1]*p[ii*NPEAK+2]/(2.0*den);
-	}
-	ret += p[numridges*NPEAK]/(1.0 + pow(nu*p[numridges*NPEAK+1], p[numridges*NPEAK+2]));
-	ret += p[numridges*NPEAK+3]*p[numridges*NPEAK+5]/(pow(nu-p[numridges*NPEAK+4],2.) + pow(0.5*p[numridges*NPEAK+5],2.));
-/*	ret += p[numridges*5+3]*p[numridges*5+5]/((nu-p[numridges*5+4])*(nu-p[numridges*5+4])+p[numridges*5+5]*p[numridges*5+5]/4.);
-*/	return ret;
-}
-
 
 /* Normalize spectrum by average at constant k */
 void normalize (double ****spec, double** norm, int nnu, int nk, int ntheta)
