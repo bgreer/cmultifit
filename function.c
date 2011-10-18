@@ -1,6 +1,11 @@
 #include "header.h"
 #include <math.h>
 
+void ml_funk ()
+{
+		
+}
+
 int funk (int m, int n, double* p, double *deviates, double **derivs, void *private)
 {
 	struct kslice *sub;
@@ -71,7 +76,7 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 					case WEIGHT_MAXL:
 						deviates[num] = sub->data[iw-istw][itht]/deviates[num];
 						deviates[num] -= log(deviates[num]);
-						deviates[num] = -(deviates[num]);
+						deviates[num] = -sqrt(deviates[num]);
 						break;
 				}
 			} else {

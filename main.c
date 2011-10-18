@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <gsl/gsl_multimin.h>
 #include "header.h"
 
 void usage (char* name)
@@ -32,6 +33,13 @@ int main (int argc, char* argv[])
 	mpres = malloc(sizeof(mp_result));
 	mpconf = malloc(sizeof(mp_config));
 	double sum, sum2, sum3;
+
+	/* TEST: for gsl min */
+	const gsl_multimin_fminimizer_type *T;
+	gsl_multimin_fminimizer *s;
+	gsl_vector *x;
+	gsl_multimin_function ml_func;
+	ml_func.f = ml_funk;
 
 	if (argc < 2)
 	{
