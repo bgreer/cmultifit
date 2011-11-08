@@ -171,8 +171,8 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, doub
 	
 	/* Determine starting guesses */
 	param[0] = 10.0;
-	param[1] = 0.1;
-	param[2] = 2.0;
+	param[1] = 100.;
+	param[2] = 2.5;
 
 	mpres2 = (mp_result*) calloc(1,sizeof(mp_result));
 	mpconf = (mp_config*) calloc(1, sizeof(mp_config));
@@ -180,7 +180,7 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, doub
 	/* Load subsection data */
 	sub.par = p;
 	sub.start = 0;
-	sub.end = (1000.)/delta_nu;
+	sub.end = (2000.)/delta_nu;
 	if (sub.end >= nnu) sub.end = nnu-1;
 	sub.ntheta = ntheta;
 	sub.delta_nu = delta_nu;
@@ -256,7 +256,7 @@ int funk_back (int m, int n, double* p, double *deviates, double **derivs, void 
 	num = 0;
 	for (iw=istw; iw<=iendw; iw++)
 	{
-		back = p[0]/(1.+pow(p[1]*iw*sub->delta_nu,p[2]));
+		back = p[0]/(1.+pow((iw*sub->delta_nu)/p[1],p[2]));
 		for (itht=0; itht<sub->ntheta; itht++)
 		{
 			deviates[num] = 0.0;

@@ -1,3 +1,4 @@
+#include <gsl/gsl_multimin.h>
 #include "fitsio.h"
 #include "mpfit.h"
 
@@ -31,10 +32,13 @@
 #define PI    (3.14159265358979324)
 #define TWOPI (6.28318530717958648)
 
+#define gvg gsl_vector_get
+#define map(x, y) (erf((x)/(y)))
+
 struct kslice
 {
 	double **data, **noise;
-	int start, end, ntheta;
+	int start, end, ntheta, n;
 	double delta_nu, k;
 	struct params* par;
 };
@@ -78,5 +82,8 @@ void read_param_file (char* fname, struct params* p);
 void trim (char* str);
 
 /* function.c */
+double ml_funk (const gsl_vector *v, void* params);
+void ml_dfunk (const gsl_vector *v, void *params, gsl_vector *g);
+void ml_fdfunk (const gsl_vector *v, void *params, double *f, gsl_vector *g);
 int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
 void calc_derivs (int m, int n, double* p, double *deviates, double **derivs, void *private_data);

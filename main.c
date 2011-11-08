@@ -5,6 +5,46 @@
 #include <gsl/gsl_multimin.h>
 #include "header.h"
 
+void time_test(gsl_vector *x, void* params, gsl_multimin_function_fdf ml_func)
+{
+	int i;
+	double ml;
+	gsl_vector *g;
+	g = gsl_vector_alloc(ml_func.n);
+	printf("time test\n");
+
+	for (i=0; i<2000; i++)
+	{
+		ml_dfunk(x, params, g);
+	}
+
+	exit(EXIT_FAILURE);
+}
+
+void deriv_test(gsl_vector *x, void* params, gsl_multimin_function_fdf ml_func)
+{
+	int i;
+	gsl_vector *g;
+	double start, end, delta, deriv;
+
+	g = gsl_vector_alloc(ml_func.n);
+	printf("TESTING DERIVATIVES\n");
+
+	for (i=0; i<64; i++)
+	{
+	start = ml_funk(x, params);
+	ml_dfunk(x, params, g);
+	deriv = gvg(g, i);
+
+	delta = 1.0e-4*gvg(x,i);
+	gsl_vector_set(x, i, gvg(x,i)+delta);
+	end = ml_funk(x, params);
+
+	printf("%e\n", ((end-start)-deriv*delta)/(end-start));
+	}
+	exit(EXIT_FAILURE);
+}
+
 void usage (char* name)
 {
 	printf("Usage: \n%s paramfile\n", name);
@@ -35,11 +75,15 @@ int main (int argc, char* argv[])
 	double sum, sum2, sum3;
 
 	/* TEST: for gsl min */
-	const gsl_multimin_fminimizer_type *T;
-	gsl_multimin_fminimizer *s;
-	gsl_vector *x;
-	gsl_multimin_function ml_func;
+	int iter;
+	double size;
+	const gsl_multimin_fdfminimizer_type *T;
+	gsl_multimin_fdfminimizer *s;
+	gsl_vector *x, *step;
+	gsl_multimin_function_fdf ml_func;
 	ml_func.f = ml_funk;
+	ml_func.df = ml_dfunk;
+	ml_func.fdf = ml_fdfunk;
 
 	if (argc < 2)
 	{
@@ -221,11 +265,11 @@ int main (int argc, char* argv[])
 				bounds[ii*NPEAK+2].limits[1] = width[ij][ii]*4.0;
 
 				/* set velocities */
-				param[ii*NPEAK+3] = 1.0;
+				param[ii*NPEAK+3] = 0.0;
 				bounds[ii*NPEAK+3].limited[0] = bounds[ii*NPEAK+3].limited[1] = 1;
 				bounds[ii*NPEAK+3].limits[0] = -1000.0;
 				bounds[ii*NPEAK+3].limits[1] = 1000.0;
-				param[ii*NPEAK+4] = 1.0;
+				param[ii*NPEAK+4] = 0.0;
 				bounds[ii*NPEAK+4].limited[0] = bounds[ii*NPEAK+4].limited[1] = 1;
 				bounds[ii*NPEAK+4].limits[0] = -1000.0;
 				bounds[ii*NPEAK+4].limits[1] = 1000.0;
@@ -250,7 +294,9 @@ int main (int argc, char* argv[])
 			bounds[numridges[ij]*NPEAK].limited[0] = 1;
 			bounds[numridges[ij]*NPEAK].limited[1] = 0;
 			bounds[numridges[ij]*NPEAK].limits[0] = 0.0;
+			param[numridges[ij]*NPEAK+1] = 100.;
 			bounds[numridges[ij]*NPEAK+1].limited[0] = bounds[numridges[ij]*NPEAK+1].limited[1] = 0;
+			param[numridges[ij]*NPEAK+2] = 3.0;
 			bounds[numridges[ij]*NPEAK+2].limited[0] = 1;
 			bounds[numridges[ij]*NPEAK+2].limited[1] = 0;
 			bounds[numridges[ij]*NPEAK+2].limits[0] = 0.0;
@@ -275,13 +321,13 @@ int main (int argc, char* argv[])
 			bounds[numridges[ij]*NPEAK+7].limits[1] = 10000.;
 
 			subsection.par = &par;
+			subsection.n = numridges[ij];
 			
 			/* Load klice struct for passing to function */
 			subsection.start = 0;
 			if (subsection.start < 0) subsection.start = 0;
 			
-			subsection.end = (param[(numridges[ij]-1)*NPEAK]+1.*param[(numridges[ij]-1)*NPEAK+2])
-								/delta_nu;
+			subsection.end = (param[(numridges[ij]-1)*NPEAK]+2.*param[(numridges[ij]-1)*NPEAK+2])/delta_nu;
 			if (subsection.end > nnu-1) subsection.end = nnu-1;
 
 			subsection.delta_nu = delta_nu;
@@ -314,51 +360,44 @@ int main (int argc, char* argv[])
 /* Perform optimization */
 			if (!par.silent) printf("\tDoing multifit.\n");
 
-			if (par.dofits) mpreturn = mpfit(&funk, 
-					ntheta*(subsection.end-subsection.start+1), 
-					numridges[ij]*NPEAK+NBACK, 
-					param, 
-					bounds, 
-					mpconf, 
-					&subsection, 
-					mpres);
-		
-			/* Check return value of mpfit */
-			switch (mpreturn)
+			ml_func.n = numridges[ij]*NPEAK+NBACK;
+			ml_func.params = &subsection;
+			x = gsl_vector_alloc(numridges[ij]*NPEAK+NBACK);
+			step = gsl_vector_alloc(numridges[ij]*NPEAK+NBACK);
+			for (ii=0; ii<numridges[ij]*NPEAK+NBACK; ii++)
 			{
-				case MP_OK_CHI:
-					printf("\tMPFIT convergence in chi-square\n");break;
-				case MP_OK_PAR:
-					printf("\tMPFIT convergence in parameter value\n");break;
-				case MP_OK_DIR:
-					printf("\tMPFIT convergence in orthogonality\n");break;
-				case MP_MAXITER:
-					printf("\tMPFIT max iterations reached\n");break;
-				case MP_FTOL:
-					printf("\tMPFIT ftol criteria reached\n");break;
-				case MP_XTOL:
-					printf("\tMPFIT xtol criteria reached\n");break;
-				case MP_GTOL:
-					printf("\tMPFIT gtol criteria reached\n");break;
-
-				case MP_ERR_INPUT:
-					printf("\tMPFIT ERROR: input parameter error\n");break;
-				case MP_ERR_NAN:
-					printf("\tMPFIT ERROR: function returned nan\n");break;
-				case MP_ERR_MEMORY:
-					printf("\tMPFIT ERROR: memory allocation error\n");break;
-				case MP_ERR_INITBOUNDS:
-					printf("\tMPFIT ERROR: guesses inconsistent with bounds\n");break;
-				case MP_ERR_BOUNDS:
-					printf("\tMPFIT ERROR: inconsistent bounds\n");break;
-				case MP_ERR_PARAM:
-					printf("\tMPFIT ERROR: input parameter error\n");break;
-				case MP_ERR_DOF:
-					printf("\tMPFIT ERROR: too few degrees of freedom\n");break;
-
-				default:
-					printf("\tMPFIT return = %d\n", mpreturn);break;
+				gsl_vector_set(x, ii, param[ii]);
+				printf("%e\n", param[ii]);
 			}
+			T = gsl_multimin_fdfminimizer_conjugate_fr;
+			s = gsl_multimin_fdfminimizer_alloc(T, numridges[ij]*NPEAK+NBACK);
+			gsl_multimin_fdfminimizer_set(s, &ml_func, x, 0.5, 0.1);
+			iter = 0;
+			status = -1;
+			printf("%f\n", gsl_vector_get(s->x, 0));
+
+/*			deriv_test(x, &subsection, ml_func);*/
+/*			time_test(x, &subsection, ml_func);*/
+
+			do
+			{
+				iter++;
+				printf("iter %d\n", iter);
+				status = gsl_multimin_fdfminimizer_iterate(s);
+				if (status)
+					break;
+				/*status = gsl_multimin_test_gradient(s->gradient, 1e-3);*/
+				status = GSL_CONTINUE;
+				if (status == GSL_SUCCESS && 0)
+				{
+					printf("CONVERGED\n");
+				}
+			} while (iter < 0 && status == GSL_CONTINUE);
+			printf("final iter = %d   status = %d\n", iter, status);
+			printf("%f\n", gsl_vector_get(s->x, 0));
+			printf("final likelihood = %e\n", ml_funk(s->x, &subsection));
+			for (ii=0; ii<numridges[ij]*NPEAK+NBACK; ii++)
+				param[ii] = gvg(s->x, ii);
 
 			/* Output optimization details */
 			if (!par.silent) 
@@ -416,12 +455,12 @@ int main (int argc, char* argv[])
 					} else if (abs(param[ii*NPEAK]-freq[ij][ii])/freq[ij][ii] >= 0.2) {
 						printf("\tLine at %f deemed invalid: ", param[ii*NPEAK]);
 						printf("Frequency drifted too much from model\n");
-					} else if (xerror[ii*NPEAK]<=0.0 || xerror[ii*NPEAK+1]<=0.0 || 
+					}/* else if (xerror[ii*NPEAK]<=0.0 || xerror[ii*NPEAK+1]<=0.0 || 
 							xerror[ii*NPEAK+2]<=0.0 || xerror[ii*NPEAK+3]<=0.0 || 
 							xerror[ii*NPEAK+4]<=0.0) {
 						printf("\tLine at %f deemed invalid: ", param[ii*NPEAK]);
 						printf("Zero error\n");
-					} else {
+					}*/ else {
 						fprintf(fpout, "%d\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%e\t%e\n", 
 							ij, 
 							(ij+1)*delta_k,

@@ -1,12 +1,12 @@
 # Parameter file for cmultifit (# starts a comment)
 
 # first line is main spectrum to read
-../hmi/new_su_rsb.avgpspec_fd15.2099.+00.0.+00.0.mean.fits
+#../hmi/new_su_rsb.avgpspec_fd15.2099.+00.0.+00.0.mean.fits
 #../simring/4deg/spec_180.00_+00.00_pr.fits
-#../tests/hmi_2.5deg_9hr/new_2.5deg.fits
+../tests/hmi_5deg_9hr/new_5deg.fits
 
 # second line is model file
-hmi_trunc.model
+hmi_5deg.model
 
 # third line is the file to output to
 out
@@ -30,7 +30,7 @@ out
 
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
-0 999
+9 9
 
 # Next are parameters for fit convergence
 

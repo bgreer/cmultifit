@@ -14,7 +14,7 @@ void output_debug (struct params* p, double ***pol, double ***noise, int ntheta,
 		back1 = back2 = fit = sp = no = 0.0;
 		for (ik=0; ik<ntheta; ik++)
 		{
-			back1 += x[n-8]*(1.0+x[n-5]*cos(2.0*(TWOPI*ik/ntheta - x[n-4])))/(1.0+pow(x[n-7]*ii*delta_nu,x[n-6]));
+			back1 += x[n-8]*(1.0+x[n-5]*cos(2.0*(TWOPI*ik/ntheta - x[n-4])))/(1.0+pow(ii*delta_nu/(x[n-7]),x[n-6]));
 			back2 += x[n-3]*x[n-1]/((ii*delta_nu-x[n-2])*(ii*delta_nu-x[n-2]) + 0.25*x[n-1]*x[n-1]);
 			for (ij=0; ij<(n-NBACK)/NPEAK; ij++)
 			{
