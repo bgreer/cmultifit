@@ -82,7 +82,6 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 	mpreturn = 1;
 	mpreturn = mpfit(&funk_single, ntheta*(sub.end-sub.start+1), 4, 
 					param, bounds, mpconf, &sub, mpres2);
-	printf("%d\n", mpreturn);
 	*freq = param[0];
 	*amp = param[1];/**20.;*param[0];*/
 	*width = param[2];

@@ -2,6 +2,11 @@
 #include "fitsio.h"
 #include "mpfit.h"
 
+/* For later, optimizing */
+#define NNU (1152)
+#define NK (192)
+#define NTHETA (20)
+
 #define NPEAK (7) /* number of parameters for each peak */
 #define NBACK (8) /* number of parameters for background terms */
 
@@ -86,4 +91,3 @@ double ml_funk (const gsl_vector *v, void* params);
 void ml_dfunk (const gsl_vector *v, void *params, gsl_vector *g);
 void ml_fdfunk (const gsl_vector *v, void *params, double *f, gsl_vector *g);
 int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
-void calc_derivs (int m, int n, double* p, double *deviates, double **derivs, void *private_data);

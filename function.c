@@ -169,132 +169,126 @@ void ml_fdfunk (const gsl_vector *v, void *params, double *f, gsl_vector *g)
 int funk (int m, int n, double* p, double *deviates, double **derivs, void *private)
 {
 	struct kslice *sub;
-	int istw, iendw, num, iw, itht, ik, ii;
-	double akt, w1, tht, den, x2, err, back, back2, cost, sint;
-	
+	double akt, w1, tht, den, x2, back, back2, backw, freq, co, corr, lor;
+	int ii, iw, istw, iendw, itht, ij, nr, num;
+	double model, lh, lh2;
 	sub = (struct kslice*) private;
+
+	lh = 0.0;
+	lh2 = 0.0;
 	istw = sub->start;
 	iendw = sub->end;
-	akt = sub->k;
+	akt  = sub->k;
+	nr = sub->n;
 
-	/* Add background first */
 	num = 0;
-	for (iw=istw; iw<=iendw; iw++)
+	for (iw = istw; iw<=iendw; iw++)
 	{
 		w1 = iw*sub->delta_nu;
-		back = p[n-3]*p[n-1]/((w1-p[n-2])*(w1-p[n-2]) + 0.25*p[n-1]*p[n-1]);
-		back2 = 1.0/(1.0+pow(p[n-7]*w1, p[n-6]));
+		back = p[nr*NPEAK]/(1.+pow(w1/p[nr*NPEAK+1], p[nr*NPEAK+2]));
+		back2 = 0.5*p[nr*NPEAK+5]*p[nr*NPEAK+7] 
+			/ ((w1-p[nr*NPEAK+6])*(w1-p[nr*NPEAK+6]) + 0.25*p[nr*NPEAK+7]*p[nr*NPEAK+7]);
 		for (itht=0; itht<sub->ntheta; itht++)
 		{
 			tht = TWOPI*itht/sub->ntheta;
-			deviates[num] = back + back2*p[n-8]*(1.0 + p[n-5]*cos(2.0*(tht-p[n-4])));
-			num++;
-		}
-	}
-
-	/* Add each peak individually */
-	for (ik=0; ik<(n-NBACK)/NPEAK; ik++)
-	{
-		num = 0;
-		/*  pre-compute theta variation */
-		for (itht=0; itht<sub->ntheta; itht++)
-		{
-			tht = TWOPI*itht/sub->ntheta;
-			thtarr[itht] = akt*(p[ik*NPEAK+3]*cos(tht)+p[ik*NPEAK+4]*sin(tht))/TWOPI - p[ik*NPEAK];
-			thtpow[itht] = 0.5*p[ik*NPEAK+2]*p[ik*NPEAK+1]*(1.0+p[ik*NPEAK+5]*cos(2.0*(tht-p[ik*NPEAK+6])));
-		}
-		/* Loop over each nu, then theta */
-		for (iw=istw; iw<=iendw; iw++)
-		{
-			w1 = iw*sub->delta_nu;
-			for (itht=0; itht<sub->ntheta; itht++)
+			backw = back*(1.+p[nr*NPEAK+3]*cos(2.*(tht-p[nr*NPEAK+4])));
+			/* Create model */
+			model = back2+backw;
+			for (ii=0; ii<nr; ii++)
 			{
-				den = w1 + thtarr[itht];
-				den = den*den + p[ik*NPEAK+2]*p[ik*NPEAK+2]/4.0;
-				x2 = thtpow[itht]/den;
-				deviates[num] += x2;
-				num++;
+				den = w1 - p[ii*NPEAK]
+					+ akt*(p[ii*NPEAK+3]*cos(tht)+p[ii*NPEAK+4]*sin(tht))/TWOPI;
+				den = den*den + 0.25*p[ii*NPEAK+2]*p[ii*NPEAK+2];
+				model += 0.5*p[ii*NPEAK+1]*p[ii*NPEAK+2] 
+					*(1+p[ii*NPEAK+5]*cos(2.*(tht-p[ii*NPEAK+6])))/den;
 			}
-		}
-	}
-
-	/* Second step: subtract from data, weight appropriately */
-	num = 0;
-	for (iw=istw; iw<=iendw; iw++)
-	{
-		for (itht=0; itht<sub->ntheta; itht++)
-		{
-			if (sub->data[iw-istw][itht] > 0.0 && !isnan(sub->data[iw-istw][itht]))
+			lh = model / sub->data[iw-istw][itht];
+			if (sub->data[iw-istw][itht] > 0.0)
 			{
-				/* Weight Chi appropriately */
-				switch (sub->par->chiweight)
-				{
-					case WEIGHT_NOISE:
-						deviates[num] = (deviates[num] - sub->data[iw-istw][itht]);
-						deviates[num] /= sub->noise[iw-istw][itht];
-						break;
-					case WEIGHT_MAXL:
-						deviates[num] = sub->data[iw-istw][itht]/deviates[num];
-						deviates[num] -= log(deviates[num]);
-						deviates[num] = -sqrt(deviates[num]);
-						break;
-				}
-			} else {
+				deviates[num] = 0.5*(model-sub->data[iw-istw][itht])/sqrt(model*sub->data[iw-istw][itht]);
+				corr = (1.-sub->data[iw-istw][itht]/model)/model;
+			}
+			else
+			{
 				deviates[num] = 0.0;
+				corr = 0.0;
+			}
+			if (derivs)
+			{
+				/* Calculate each derivative */
+				for (ii=0; ii<nr; ii++)
+				{
+					co = cos(2.*(tht-p[ii*NPEAK+6]));
+					den = w1 - p[ii*NPEAK]
+						+ akt*(p[ii*NPEAK+3]*cos(tht)+p[ii*NPEAK+4]*sin(tht))/TWOPI;
+					lor = 0.5*p[ii*NPEAK+1]*p[ii*NPEAK+2]*(1.+p[ii*NPEAK+5]*co);
+					lor /= den*den + 0.25*p[ii*NPEAK+2]*p[ii*NPEAK+2];
+					/* Central frequency */
+					if (derivs[ii*NPEAK+0])
+					{
+						derivs[ii*NPEAK+0][num] = corr*lor*4.*lor*den 
+							/(p[ii*NPEAK+1]*p[ii*NPEAK+2]*(1.+p[ii*NPEAK+5]*co));
+					}
+					/* Amplitude */
+					if (derivs[ii*NPEAK+1])
+						derivs[ii*NPEAK+1][num] = corr*lor/p[ii*NPEAK+1];
+					/* Width */
+					if (derivs[ii*NPEAK+2])
+						derivs[ii*NPEAK+2][num] = corr*lor*(1.-lor*p[ii*NPEAK+2]/(1.+p[ii*NPEAK+5]*co) 
+							/p[ii*NPEAK+1])/p[ii*NPEAK+2];
+					/* Ux */
+					if (derivs[ii*NPEAK+3])
+						derivs[ii*NPEAK+3][num] = -corr*lor*lor*den*(akt*cos(tht)/PI)*2. 
+							/(p[ii*NPEAK+1]*p[ii*NPEAK+2]*(1.+p[ii*NPEAK+5]*co));
+					/* Uy */
+					if (derivs[ii*NPEAK+4])
+						derivs[ii*NPEAK+4][num] = -corr*lor*lor*den*(akt*sin(tht)/PI)*2.
+							/(p[ii*NPEAK+1]*p[ii*NPEAK+2]*(1.+p[ii*NPEAK+5]*co));
+					/* Anisotropy fraction */
+					if (derivs[ii*NPEAK+5])
+						derivs[ii*NPEAK+5][num] = corr*lor*co/(1.+p[ii*NPEAK+5]*co);
+					/* Anisotropy direction */
+					if (derivs[ii*NPEAK+6])
+						derivs[ii*NPEAK+6][num] = corr*lor*2.*p[ii*NPEAK+5]*sin(2.*(tht-p[ii*NPEAK+6])) 
+							/(1.+p[ii*NPEAK+5]*co);
+				}
+			
+				/* Then the background terms */
+				/* Power law amplitude */
+				if (derivs[nr*NPEAK+0])
+					derivs[nr*NPEAK+0][num] = corr*backw/p[nr*NPEAK+0];
+				/* Power law cut-off frequency */
+				if (derivs[nr*NPEAK+1])
+					derivs[nr*NPEAK+1][num] = corr*backw*back*p[nr*NPEAK+2]*pow(w1/p[nr*NPEAK+1],p[nr*NPEAK+2]) 
+						/ (p[nr*NPEAK+0]*p[nr*NPEAK+1]);
+				/* Power law index */
+				if (w1 > 0.0)
+					if (derivs[nr*NPEAK+2])
+						derivs[nr*NPEAK+2][num] = -corr*backw*back*log(w1/p[nr*NPEAK+1]) 
+							* pow(w1/p[nr*NPEAK+1], p[nr*NPEAK+2]) / p[nr*NPEAK];
+				/* Power law anisotropy fraction */
+				if (derivs[nr*NPEAK+3])
+					derivs[nr*NPEAK+3][num] = corr*back*cos(2.*(tht-p[nr*NPEAK+4]));
+				/* Power law anisotropy direction */
+				if (derivs[nr*NPEAK+4])
+					derivs[nr*NPEAK+4][num] = corr*back*2.0*p[nr*NPEAK+3]*sin(2.*(tht-p[nr*NPEAK+4]));
+
+				/* Lorentzian amplitude */
+				if (derivs[nr*NPEAK+5])
+					derivs[nr*NPEAK+5][num] = corr*back2/p[nr*NPEAK+5];
+				/* Lorentizian central frequency */
+				if (derivs[nr*NPEAK+6])
+					derivs[nr*NPEAK+6][num] = corr*back2*back2*4.*(w1-p[nr*NPEAK+6])/(p[nr*NPEAK+5]*p[nr*NPEAK+7]);
+				/* Lorentzian width */
+				if (derivs[nr*NPEAK+7])
+					derivs[nr*NPEAK+7][num] = corr*back2*(1.-back2*p[nr*NPEAK+7]/p[nr*NPEAK+5])/p[nr*NPEAK+7];
+
 			}
 			num++;
 		}
 	}
 
-	if (derivs) calc_derivs(m, n, p, deviates, derivs, private);
 
 	return EXIT_SUCCESS;
 }
 
-void calc_derivs (int m, int n, double* p, double *deviates, double **derivs, void *private)
-{
-	int num, ii, ij, itht, ik, iw, istw, iendw, ridgenum, param;
-	double lor, **slice;
-	struct kslice *sub;
-
-	sub = (struct kslice*) private;
-	istw = sub->start;
-	iendw = sub->end;
-	slice = (double**) malloc((iendw-istw+1)*sizeof(double*));
-	for (ii=0; ii<iendw-istw+1; ii++)
-		slice[ii] = (double*) malloc((sub->ntheta)*sizeof(double));
-
-	/* Pre-compute things */
-
-
-	/* For each deviate_ij, compute derivative wrt parameter_ii */
-	for (ii=0; ii<(n-NBACK)/NPEAK; ii++)
-	{
-		/* Pre-compute lorentzian */
-		for (iw=istw; iw<=iendw; iw++)
-		{
-			for (itht=0; itht<sub->ntheta; itht++)
-			{
-				/*slice[][] = 0.0;*/
-			}
-		}
-
-		/* Calculate derivatives of each parameter as needed */
-		if (derivs[ii]) /* Frequency */
-		{}
-		if (derivs[ii+1]) /* Amplitude */
-		{
-			num = 0;
-			for (iw=istw; iw<=iendw; iw++)
-			{
-				for (itht=0; itht<sub->ntheta; itht++)
-				{
-					derivs[ii+1][num] = slice[iw][itht]/p[ii+1];
-					num++;
-				}
-			}
-		}
-		if (derivs[ii+2]) /* Width */
-		{}
-	}
-}

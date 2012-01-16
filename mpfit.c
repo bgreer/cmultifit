@@ -2078,6 +2078,13 @@ double mp_enorm(int n, double *x)
     {
       ans = x3max*sqrt(s3);
     }
+
+	/* Modification! */
+	ans = 0.0;
+	for (i=0; i<n; i++)
+		ans += x[i]*x[i]; /* BAM */
+	ans = sqrt(ans);
+
   return(ans);
   /*
    *     last card of function enorm.

@@ -328,7 +328,7 @@ void read_param_file (char* fname, struct params* p)
 		if (p->debugfname)
 			printf("\tDebug filename base: %s\n", p->debugfname);
 		if (p->covarfname)
-			printf("\t Covar filename base: %s\n", p->covarfname);
+			printf("\tCovar filename base: %s\n", p->covarfname);
 		printf("\n");
 	}
 }
