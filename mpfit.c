@@ -1147,30 +1147,30 @@ int mp_fdjac2(mp_func funct,
 
     if (dsidei <= 1) {
       /* COMPUTE THE ONE-SIDED DERIVATIVE */
-      if (! debug) {
-	/* Non-debug path for speed */
-	for (i=0; i<m; i++, ij++) {
-	  fjac[ij] = (wa[i] - fvec[i])/h; /* fjac[i+m*j] */
-	}
-      } else {
-	/* Debug path for correctness */
-	for (i=0; i<m; i++, ij++) {
-	  double fjold = fjac[ij];
-	  fjac[ij] = (wa[i] - fvec[i])/h; /* fjac[i+m*j] */
-	  if ((da == 0 && dr == 0 && (fjold != 0 || fjac[ij] != 0)) ||
-	      ((da != 0 || dr != 0) && (fabs(fjold-fjac[ij]) > da + fabs(fjold)*dr))) {
-	    printf("   %10d %10.4g %10.4g %10.4g %10.4g %10.4g\n", 
-		   i, fvec[i], fjold, fjac[ij], fjold-fjac[ij], 
-		   (fjold == 0)?(0):((fjold-fjac[ij])/fjold));
-	  }
-	}
-      }
-
+		if (! debug) {
+			/* Non-debug path for speed */
+			for (i=0; i<m; i++, ij++) {
+		  		fjac[ij] = (wa[i] - fvec[i])/h; /* fjac[i+m*j] */
+			}
+   		 } else {
+			/* Debug path for correctness */
+			printf("01\n");
+			for (i=0; i<m; i++, ij++) {
+				double fjold = fjac[ij];
+			  	fjac[ij] = (wa[i] - fvec[i])/h; /* fjac[i+m*j] */
+			  	if ((da == 0 && dr == 0 && (fjold != 0 || fjac[ij] != 0)) ||
+			    		((da != 0 || dr != 0) && (fabs(fjold-fjac[ij]) > da + fabs(fjold)*dr))) {
+					printf("   %10d %10.4g %10.4g %10.4g %10.4g %10.4g\n", 
+						i, fvec[i], fjold, fjac[ij], fjold-fjac[ij], 
+				   		(fjold == 0)?(0):((fjold-fjac[ij])/fjold));
+				} else printf("%e  %e  %e  %e\n", fjold, fjac[ij], da, dr);
+			}
+		}
     } else {
-      /* COMPUTE THE TWO-SIDED DERIVATIVE */
-      for (i=0; i<m; i++, ij++) {
-	fjac[ij] = wa[i];    /* Store temp data: fjac[i+m*j] */
-      }
+		/* COMPUTE THE TWO-SIDED DERIVATIVE */
+		for (i=0; i<m; i++, ij++) {
+			fjac[ij] = wa[i];    /* Store temp data: fjac[i+m*j] */
+     	}
 
       /* Evaluate at x - h */
       x[ifree[j]] = temp - h;

@@ -61,8 +61,7 @@ struct params
 double *thtarr, *thtpow;
 
 /* main.c */
-double model (int numridges, double nu, double k, double theta, double* p);
-void normalize (double ****spec, double** norm, int nnu, int nk, int ntheta);
+
 
 /* fit.c */
 int fit_peak (struct params* p, double *freq, double *amp, double *width, 
@@ -75,7 +74,7 @@ int funk_back(int m, int n, double* p, double* deviates, double**derivs, void* p
 /* io.c */
 void output_debug (struct params* p, double***pol, int ntheta, 
 	int nk, int nnu, int k, int m, int n, double* x, double delta_nu, double delta_k);
-void output_covar (double* covar, int n, struct params* p);
+void output_matrix (double* covar, int n, struct params* p);
 int read_fits_file (double**** spec, struct params* p, 
 		int* ntheta, int* nk, int* nnu, double* delta_k, double* delta_nu);
 void read_param_file (char* fname, struct params* p);

@@ -39,50 +39,10 @@ void output_debug (struct params* p, double ***pol, int ntheta, int nk, int nnu,
 	fclose(fp);
 }
 
-void output_debug_corr (struct params* p, double ***pol, int ntheta, int nk, int nnu, int k, int m, int n, double* x, double delta_nu, double delta_k)
-{
-	FILE* fp;
-	int ii, ik, ij, num;
-	double back1, back2, fit, ifit, denom, sp, no, funk, back;
-	
-	fp = fopen(p->debugfname, "w");
-	for (ii=0; ii<nnu; ii++)
-	{
-		back1 = back2 = back = fit = ifit = sp = no = funk = 0.0;
-		for (ik=0; ik<ntheta; ik++)
-		{
-			fit = ifit = 0.0;
-			back1 = x[n-8]*(1.0+x[n-5]*cos(2.0*(TWOPI*ik/ntheta - x[n-4])))/(1.0+pow(x[n-7]*ii*delta_nu,x[n-6]));
-			back2 = x[n-3]*x[n-1]/((ii*delta_nu-x[n-2])*(ii*delta_nu-x[n-2]) + 0.25*x[n-1]*x[n-1]);
-			for (ij=0; ij<(n-NBACK)/NPEAK; ij++)
-			{
-				denom = ii*delta_nu
-					+ k*delta_k*(x[ij*NPEAK+3]*cos(ik*TWOPI/ntheta)
-						+x[ij*NPEAK+4]*sin(ik*TWOPI/ntheta))/TWOPI
-					- x[ij*NPEAK];
-				fit += (x[ij*NPEAK+1]*denom + x[ij*NPEAK+7]*x[ij*NPEAK+2]/2.) / 
-					(denom*denom + 0.25*x[ij*NPEAK+2]*x[ij*NPEAK+2]);
-				ifit += (x[ij*NPEAK+7]*denom - x[ij*NPEAK+1]*x[ij*NPEAK+2]/2.) / 
-					(denom*denom + 0.25*x[ij*NPEAK+2]*x[ij*NPEAK+2]);
-			}
-			sp += pol[ii][k][ik];
-			funk += back1+back2+(fit*fit+ifit*ifit);
-			back += back1;
-		}
 
-		fprintf(fp, "%d\t%e\t%e\t%e\t%e\t%e\t%e\t%e\n", ik, ii*delta_nu, 
-			sp, 
-			0.0, 
-			funk, 
-			back, 
-			back2, 
-			((back1+back2+fit)-sp)/(back1+back2+fit));
-	}
-	fclose(fp);
-}
 
-/* Prints covariance matrix to output file */
-void output_covar (double* covar, int n, struct params* p)
+/* Prints square matrix to output file (Useful for covariance matrix) */
+void output_matrix (double* covar, int n, struct params* p)
 {
 	FILE *fp;
 	int ii, ik;
@@ -93,17 +53,18 @@ void output_covar (double* covar, int n, struct params* p)
 		printf("ERROR: Could not open covar output file %s\n", p->covarfname);
 		return;
 	}
-	for (ii=0; ii<n*NPEAK+NBACK; ii++)
+	for (ii=0; ii<n; ii++)
 	{
-		for (ik=0; ik<n*NPEAK+NBACK; ik++)
+		for (ik=0; ik<n; ik++)
 		{
-			fprintf(fp, "%d\t%d\t%e\n", ii, ik, 
-				log10(fabs(covar[ii*(n*NPEAK+NBACK)+ik]+1e-7)));
+			fprintf(fp, "%d\t%d\t%e\n", ii, ik, covar[ii*n+ik]);
 		}
 		fprintf(fp, "\n");
 	}
 	fclose(fp);
 }
+
+
 
 /* Read FITS spectrum, load header keys into variables, load data cube into spec */
 int read_fits_file (double ****spec, struct params* p, 
@@ -191,6 +152,8 @@ int read_fits_file (double ****spec, struct params* p,
 	fits_close_file(fptr, &status);
 	free(buff);
 }
+
+
 
 /* Reads parameter file fname and loads data into parameter struct *p */
 void read_param_file (char* fname, struct params* p)
@@ -298,6 +261,8 @@ void read_param_file (char* fname, struct params* p)
 		printf("\n");
 	}
 }
+
+
 
 /* fgets leaves a trailing newline, this removes it */
 void trim (char* str)

@@ -203,6 +203,8 @@ int main (int argc, char* argv[])
 					bounds[ii*NPEAK+ik].deriv_debug = 0;
 					bounds[ii*NPEAK+ik].relstep = 0.0;
 					bounds[ii*NPEAK+ik].step = 0.0;
+					bounds[ii*NPEAK+ik].deriv_reltol = 0.0;
+					bounds[ii*NPEAK+ik].deriv_abstol = 0.0;
 				}
 
 				/* set frequency */
@@ -255,6 +257,8 @@ int main (int argc, char* argv[])
 				bounds[numridges[ij]*NPEAK+ii].deriv_debug = 0;
 				bounds[numridges[ij]*NPEAK+ii].relstep = 0.0;
 				bounds[numridges[ij]*NPEAK+ii].step = 0.0;
+				bounds[numridges[ij]*NPEAK+ii].deriv_reltol = 0.0;
+				bounds[numridges[ij]*NPEAK+ii].deriv_abstol = 0.0;
 			}
 			bounds[numridges[ij]*NPEAK].limited[0] = 1;
 			bounds[numridges[ij]*NPEAK].limited[1] = 0;
@@ -307,6 +311,7 @@ int main (int argc, char* argv[])
 				}
 			}
 
+			bounds[1].deriv_debug = 1;
 /*			test_derivs(bounds, numridges[ij], param, &subsection);*/
 
 			/* Set optimization parameters */
@@ -408,7 +413,7 @@ int main (int argc, char* argv[])
 					param, delta_nu, delta_k);
 		
 			/* Print covariance matrix */
-			if (par.covarfname) output_covar(covar, numridges[ij], &par);
+			if (par.covarfname) output_matrix(covar, numridges[ij]*NPEAK+NBACK, &par);
 
 			/* Output fit to file if valid */
 			if (mpreturn!=MP_MAXITER && mpreturn > 0 && mpreturn!=3)
