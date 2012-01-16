@@ -53,7 +53,7 @@ int main (int argc, char* argv[])
 	int ii, ij, ik;
 	int ntheta, nk, nnu;
 	double delta_nu, delta_k;
-	double ***pol, ***noise, *norm;
+	double ***pol, *norm;
 	double **freq, **amp, **width;
 	float readfreq, readamp, readwidth, readk;
 	int *numridges;
@@ -79,7 +79,7 @@ int main (int argc, char* argv[])
 	read_param_file(argv[1], &par);
 
 	/* Open FITS file and read keys */
-	if (read_fits_file(&pol, &noise, &par, &ntheta, &nk, &nnu, &delta_k, &delta_nu)==EXIT_FAILURE)
+	if (read_fits_file(&pol, &par, &ntheta, &nk, &nnu, &delta_k, &delta_nu)==EXIT_FAILURE)
 		return EXIT_FAILURE;
 	thtarr = malloc(ntheta*sizeof(double));
 	thtpow = malloc(ntheta*sizeof(double));
@@ -141,28 +141,9 @@ int main (int argc, char* argv[])
 	}
 	fclose(fpmodel);
 
-/* Pre-compute noise cube */
-	if (par.chiweight == WEIGHT_NOISE)
-	{
-		if (!par.silent) printf("Pre-computing noise.\n");
-		switch (par.noisemode)
-		{
-			case NOISE_CONST:
-				compute_noise_const(pol, noise, nnu, nk, ntheta);
-				break;
-			case NOISE_SMOOTH:
-				compute_noise_smooth(pol, noise, nnu, nk, ntheta, (800.)/delta_nu);
-				break;
-			case NOISE_WAVELET:
-				printf("ERROR: wavelet noise not supported in this version.\n");
-				return EXIT_FAILURE;
-				break;
-		}
-	} else {
-		printf("WARNING: Maximum likelihood uncertainties not yet implemented!\n");
-		printf("\tReported error bars will be garbage.\n");
-		compute_noise_const(pol, noise, nnu, nk, ntheta);
-	}
+/* No more noise computation needed */
+	printf("WARNING: Maximum likelihood uncertainties not yet implemented!\n");
+	printf("\tReported error bars will be garbage.\n");
 
 /* Open output file */
 	fpout = fopen(par.outfname, "w");
@@ -203,14 +184,14 @@ int main (int argc, char* argv[])
 			for (ii=0; ii<numridges[ij]; ii++)
 			{
 				if (par.dofits)
-					fit_peak(&par, &(freq[ij][ii]), &(amp[ij][ii]), &(width[ij][ii]), pol, noise, 
+					fit_peak(&par, &(freq[ij][ii]), &(amp[ij][ii]), &(width[ij][ii]), pol, 
 						delta_nu, delta_k, nnu, ntheta, ij);
 			}
 			
 			/* Do rough fit of background */
 			if (!par.silent) printf("\tFitting background at low frequency.\n");
 			fit_back(&par, &(param[numridges[ij]*NPEAK]), &(param[numridges[ij]*NPEAK+1]), 
-				&(param[numridges[ij]*NPEAK+2]), pol, noise, delta_nu, nnu, ntheta, ij);
+				&(param[numridges[ij]*NPEAK+2]), pol, delta_nu, nnu, ntheta, ij);
 			
 			/* Set multifit contraints */
 			for (ii=0; ii<numridges[ij]; ii++)
@@ -317,15 +298,12 @@ int main (int argc, char* argv[])
 			subsection.ntheta = ntheta;
 			subsection.k = (ij+1)*delta_k;
 			subsection.data = malloc((subsection.end-subsection.start+1)*sizeof(double*));
-			subsection.noise = malloc((subsection.end-subsection.start+1)*sizeof(double*));
 			for (ii=subsection.start; ii<=subsection.end; ii++)
 			{
 				subsection.data[ii-subsection.start] = malloc(ntheta*sizeof(double));
-				subsection.noise[ii-subsection.start] = malloc(ntheta*sizeof(double));
 				for (ik=0; ik<ntheta; ik++)
 				{
 					subsection.data[ii-subsection.start][ik] = pol[ii][ij][ik];
-					subsection.noise[ii-subsection.start][ik] = noise[ii][ij][ik];
 				}
 			}
 
@@ -425,7 +403,7 @@ int main (int argc, char* argv[])
 				param[numridges[ij]*NPEAK+4] += PI;
 
 			/* Print fit debug */
-			if (par.debugfname) output_debug(&par, pol, noise, ntheta, nk, nnu, ij, ntheta*(subsection.end-subsection.start+1), 
+			if (par.debugfname) output_debug(&par, pol, ntheta, nk, nnu, ij, ntheta*(subsection.end-subsection.start+1), 
 					numridges[ij]*NPEAK+NBACK, 
 					param, delta_nu, delta_k);
 		
@@ -491,10 +469,8 @@ int main (int argc, char* argv[])
 			for (ii=subsection.start; ii<=subsection.end; ii++)
 			{
 				free(subsection.data[ii-subsection.start]);
-				free(subsection.noise[ii-subsection.start]);
 			}
 			free(subsection.data);
-			free(subsection.noise);
 			if (par.covarfname) free(covar);
 		}
 	}
@@ -530,32 +506,11 @@ int main (int argc, char* argv[])
 		for (ij=0; ij<nk; ij++)
 		{
 			free(pol[ii][ij]);
-			free(noise[ii][ij]);
 		}
 		free(pol[ii]);
-		free(noise[ii]);
 	}
 	free(pol);
-	free(noise);
 	free(norm);
 	return EXIT_SUCCESS;
 }
 
-/* Normalize spectrum by average at constant k */
-void normalize (double ****spec, double** norm, int nnu, int nk, int ntheta)
-{
-	int ii, ij, ik;
-	double sum;
-
-	for (ij=0; ij<nk; ij++)
-	{
-		sum = 0.0;
-		for (ii=0; ii<nnu; ii++)
-			for (ik=0; ik<ntheta; ik++)
-				sum += (*spec)[ii][ij][ik];
-		(*norm)[ij] = sum/(nnu*ntheta);
-		for (ii=0; ii<nnu; ii++)
-			for (ik=0; ik<ntheta; ik++)
-				(*spec)[ii][ij][ik] /= (*norm)[ij];
-	}
-}

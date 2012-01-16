@@ -2,7 +2,7 @@
 #include <math.h>
 #include "header.h"
 
-void output_debug (struct params* p, double ***pol, double ***noise, int ntheta, int nk, int nnu, int k, int m, int n, double* x, double delta_nu, double delta_k)
+void output_debug (struct params* p, double ***pol, int ntheta, int nk, int nnu, int k, int m, int n, double* x, double delta_nu, double delta_k)
 {
 	FILE* fp;
 	int ii, ik, ij, num;
@@ -26,12 +26,11 @@ void output_debug (struct params* p, double ***pol, double ***noise, int ntheta,
 					(denom*denom + 0.25*x[ij*NPEAK+2]*x[ij*NPEAK+2]);
 			}
 			sp += pol[ii][k][ik];
-			no += noise[ii][k][ik];
 		}
 
 		fprintf(fp, "%d\t%e\t%e\t%e\t%e\t%e\t%e\t%e\n", ik, ii*delta_nu, 
 			sp, 
-			no, 
+			0.0, 
 			back1+back2+fit, 
 			back1, 
 			back2, 
@@ -40,7 +39,7 @@ void output_debug (struct params* p, double ***pol, double ***noise, int ntheta,
 	fclose(fp);
 }
 
-void output_debug_corr (struct params* p, double ***pol, double ***noise, int ntheta, int nk, int nnu, int k, int m, int n, double* x, double delta_nu, double delta_k)
+void output_debug_corr (struct params* p, double ***pol, int ntheta, int nk, int nnu, int k, int m, int n, double* x, double delta_nu, double delta_k)
 {
 	FILE* fp;
 	int ii, ik, ij, num;
@@ -67,14 +66,13 @@ void output_debug_corr (struct params* p, double ***pol, double ***noise, int nt
 					(denom*denom + 0.25*x[ij*NPEAK+2]*x[ij*NPEAK+2]);
 			}
 			sp += pol[ii][k][ik];
-			no += noise[ii][k][ik];
 			funk += back1+back2+(fit*fit+ifit*ifit);
 			back += back1;
 		}
 
 		fprintf(fp, "%d\t%e\t%e\t%e\t%e\t%e\t%e\t%e\n", ik, ii*delta_nu, 
 			sp, 
-			no, 
+			0.0, 
 			funk, 
 			back, 
 			back2, 
@@ -108,7 +106,7 @@ void output_covar (double* covar, int n, struct params* p)
 }
 
 /* Read FITS spectrum, load header keys into variables, load data cube into spec */
-int read_fits_file (double ****spec, double ****noise, struct params* p, 
+int read_fits_file (double ****spec, struct params* p, 
 		int* ntheta, int* nk, int* nnu, double* delta_k, double* delta_nu)
 {
 	fitsfile *fptr;
@@ -161,15 +159,12 @@ int read_fits_file (double ****spec, double ****noise, struct params* p,
 		printf("\t With %ld bytes of overhead.\n", sizeof(double*)*(*nk)*(*nnu)+sizeof(double**)*(*nnu));
 
 	*spec = (double***) malloc((*nnu)*sizeof(double**));
-	*noise = (double***) malloc((*nnu)*sizeof(double**));
 	for (ii=0; ii<(*nnu); ii++)
 	{
 		(*spec)[ii] = (double**) malloc((*nk)*sizeof(double*));
-		(*noise)[ii] = (double**) malloc((*nk)*sizeof(double*));
 		for (ij=0; ij<(*nk); ij++)
 		{
 			(*spec)[ii][ij] = (double*) malloc((*ntheta)*sizeof(double));
-			(*noise)[ii][ij] = (double*) calloc(*ntheta,sizeof(double));
 			if ((*spec)[ii][ij]==NULL)
 			{
 				printf("Error allocating memory.\n");
@@ -241,9 +236,6 @@ void read_param_file (char* fname, struct params* p)
 				case PARAM_WEIGHT:
 					p->chiweight = atoi(buffer);
 					break;
-				case PARAM_NOISE:
-					p->noisemode = atoi(buffer);
-					break;
 				case PARAM_KRANGE:
 					/* split string by putting null-terminator where the space is */
 					ii=0;
@@ -299,32 +291,6 @@ void read_param_file (char* fname, struct params* p)
 	if (!p->silent)
 	{
 		printf("\nRun parameters:\n");
-		printf("\tChi-squared weighting: ");
-		switch (p->chiweight)
-		{
-			case WEIGHT_NOISE:
-				printf("Noise Weighted\n");
-				break;
-			case WEIGHT_MAXL:
-				printf("Fit Weighted (Maximum Likelihood)\n");
-				break;
-		}
-		if (p->chiweight == WEIGHT_NOISE)
-		{
-			printf("\tNoise estimator: ");
-			switch (p->noisemode)
-			{
-				case NOISE_CONST:
-					printf("Constant Noise\n");
-					break;
-				case NOISE_SMOOTH:
-					printf("Smooth Noise\n");
-					break;
-				case NOISE_WAVELET:
-					printf("Wavelet Noise\n");
-					break;
-			}
-		}
 		if (p->debugfname)
 			printf("\tDebug filename base: %s\n", p->debugfname);
 		if (p->covarfname)
