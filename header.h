@@ -26,6 +26,8 @@
 #define PARAM_COVAR (12)
 #define PARAM_BACK (13)
 #define PARAM_FIT (14)
+#define PARAM_CUTOFF (15)
+#define PARAM_FITABOVE (16)
 
 /* Set which values correspond to which modes */
 #define WEIGHT_NOISE (0)
@@ -51,7 +53,8 @@ struct kslice
 struct params
 {
 	char *fitsfname, *modelfname, *outfname;
-	int silent, chiweight, dofits;
+	int silent, chiweight, dofits, fit_above;
+	double ac_cutoff;
 	int kstart, kend;
 	double ftol, xtol, gtol;
 	int niter;

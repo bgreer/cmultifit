@@ -311,7 +311,7 @@ int main (int argc, char* argv[])
 				}
 			}
 
-			bounds[1].deriv_debug = 1;
+			bounds[0].side = 0;
 /*			test_derivs(bounds, numridges[ij], param, &subsection);*/
 
 			/* Set optimization parameters */

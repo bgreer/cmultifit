@@ -244,6 +244,12 @@ void read_param_file (char* fname, struct params* p)
 				case PARAM_FIT:
 					p->dofits = atoi(buffer);
 					break;
+				case PARAM_CUTOFF:
+					p->ac_cutoff = (double) atof(buffer);
+					break;
+				case PARAM_FITABOVE:
+					p->fit_above = atoi(buffer);
+					break;
 			}
 			index++;
 		}
@@ -254,6 +260,16 @@ void read_param_file (char* fname, struct params* p)
 	if (!p->silent)
 	{
 		printf("\nRun parameters:\n");
+		printf("\tAcoustic Cutoff Frequency: %6.1f uHz\n", p->ac_cutoff);
+		switch (p->fit_above)
+		{
+			case 0:
+				printf("\tNo peaks fit above this.\n"); break;
+			case 1:
+				printf("\tSimple peaks fit above this.\n"); break;
+			case 2:
+				printf("\tFull peaks fit above this.\n"); break;
+		}
 		if (p->debugfname)
 			printf("\tDebug filename base: %s\n", p->debugfname);
 		if (p->covarfname)

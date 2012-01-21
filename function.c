@@ -200,12 +200,15 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 					+ akt*(p[ii*NPEAK+3]*cos(tht)+p[ii*NPEAK+4]*sin(tht))/TWOPI;
 				den = den*den + 0.25*p[ii*NPEAK+2]*p[ii*NPEAK+2];
 				model += 0.5*p[ii*NPEAK+1]*p[ii*NPEAK+2] 
-					*(1+p[ii*NPEAK+5]*cos(2.*(tht-p[ii*NPEAK+6])))/den;
+					*(1.+p[ii*NPEAK+5]*cos(2.*(tht-p[ii*NPEAK+6])))/den;
 			}
 			lh = model / sub->data[iw-istw][itht];
 			if (sub->data[iw-istw][itht] > 0.0)
 			{
-				deviates[num] = 0.5*(model-sub->data[iw-istw][itht])/sqrt(model*sub->data[iw-istw][itht]);
+				/* likelihood = log(model/data) + data/model */
+				/*deviates[num] = 0.5*(model-sub->data[iw-istw][itht])/sqrt(model*sub->data[iw-istw][itht]);*/
+				/*deviates[num] = log(model/sub->data[iw-istw][itht]) + sub->data[iw-istw][itht]/model;*/
+				deviates[num] = log(model/sub->data[iw-istw][itht]);
 				corr = (1.-sub->data[iw-istw][itht]/model)/model;
 			}
 			else
@@ -225,10 +228,8 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 					lor /= den*den + 0.25*p[ii*NPEAK+2]*p[ii*NPEAK+2];
 					/* Central frequency */
 					if (derivs[ii*NPEAK+0])
-					{
 						derivs[ii*NPEAK+0][num] = corr*lor*4.*lor*den 
 							/(p[ii*NPEAK+1]*p[ii*NPEAK+2]*(1.+p[ii*NPEAK+5]*co));
-					}
 					/* Amplitude */
 					if (derivs[ii*NPEAK+1])
 						derivs[ii*NPEAK+1][num] = corr*lor/p[ii*NPEAK+1];

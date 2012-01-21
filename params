@@ -76,3 +76,12 @@ backcoefs
 # Perform fits
 # Useful for testing the model file
 1
+
+# Acoustic cutoff frequency (in uHz)
+6000
+
+# Fit simple peaks above acoustic cutoff frequency
+# 0 = no fits above
+# 1 = simple fits (no velocities)
+# 2 = full fits (ignore cutoff frequency)
+0
