@@ -47,7 +47,7 @@ void usage (char* name)
 
 int main (int argc, char* argv[])
 {
-	FILE *fpmodel, *fpout, *fpback;
+	FILE *fpout, *fpback;
 	struct params par;
 	int status = 0;
 	int ii, ij, ik;
@@ -55,7 +55,6 @@ int main (int argc, char* argv[])
 	double delta_nu, delta_k;
 	double ***pol, *norm;
 	double **freq, **amp, **width;
-	float readfreq, readamp, readwidth, readk;
 	int *numridges;
 
 	int mpreturn, index;
@@ -91,55 +90,8 @@ int main (int argc, char* argv[])
 	if (par.kstart < 0) par.kend = 0;
 	if (par.kend >= nk) par.kend = nk-1;
 
-/* Read model file */
-	if (!par.silent) printf("Reading model from %s\n", par.modelfname);
-	numridges = (int*) malloc(nk*sizeof(int));
-	freq = (double**) malloc(nk*sizeof(double*));
-	amp = (double**) malloc(nk*sizeof(double*));
-	width = (double**) malloc(nk*sizeof(double*));
-	for (ii=0; ii<nk; ii++)
-		numridges[ii] = 0;
-	/* Run through once to count ridges */
-	fpmodel = fopen(par.modelfname, "r");
-	if (fpmodel==NULL)
-	{
-		printf("ERROR: could not open model file: %s\n", par.modelfname);
-		return EXIT_FAILURE;
-	}
-	while (fscanf(fpmodel, "%d\t%e\f%e\t%e\t%e\n", &ii, &readk, &readfreq, &readamp, &readwidth) != EOF)
-	{
-		if (ii>=0 && ii<nk)
-		{
-			numridges[ii]++;
-		} else {
-			printf("ERROR: k-value out of range in model: %d\n", ii);
-			return EXIT_FAILURE;
-		}
-	}
-	rewind(fpmodel);
-	/* allocate enough for all ridges, then load them */
-	for (ii=0; ii<nk; ii++)
-	{
-		if (numridges[ii]>0)
-		{
-			freq[ii] = (double*) malloc(numridges[ii]*sizeof(double));
-			amp[ii] = (double*) malloc(numridges[ii]*sizeof(double));
-			width[ii] = (double*) malloc(numridges[ii]*sizeof(double));
-		}
-		for (ij=0; ij<numridges[ii]; ij++)
-		{
-			ik = fscanf(fpmodel, "%d\t%e\t%e\t%e\t%e\n", &ik, &readk, &readfreq, &readamp, &readwidth);
-			if (readfreq<0.0 || readamp<0.0 || readwidth<0.0)
-			{
-				printf("ERROR: Invalid parameters in model, k=%d\n", ii);
-				return EXIT_FAILURE;
-			}
-			freq[ii][ij] = readfreq;
-			amp[ii][ij] = readamp;
-			width[ii][ij] = readwidth;
-		}
-	}
-	fclose(fpmodel);
+	read_model_file(&par, nk, &numridges, &freq, &amp, &width);
+	printf("test %d\n", numridges[20]);
 
 /* No more noise computation needed */
 	printf("WARNING: Maximum likelihood uncertainties not yet implemented!\n");

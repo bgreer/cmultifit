@@ -153,6 +153,62 @@ int read_fits_file (double ****spec, struct params* p,
 	free(buff);
 }
 
+/* Read model file */
+int read_model_file (struct params *par, int nk, int **numridges, double ***freq, double ***amp, double ***width)
+{
+	FILE *fpmodel;
+	int ii, ij, ik;
+	float readfreq, readamp, readwidth, readk;
+
+	if (!par->silent) printf("Reading model from %s\n", par->modelfname);
+	*numridges = (int*) malloc(nk*sizeof(int));
+	*freq = (double**) malloc(nk*sizeof(double*));
+	*amp = (double**) malloc(nk*sizeof(double*));
+	*width = (double**) malloc(nk*sizeof(double*));
+	for (ii=0; ii<nk; ii++)
+		(*numridges)[ii] = 0;
+	/* Run through once to count ridges */
+	fpmodel = fopen(par->modelfname, "r");
+	if (fpmodel==NULL)
+	{
+		printf("ERROR: could not open model file: %s\n", par->modelfname);
+		return EXIT_FAILURE;
+	}
+	while (fscanf(fpmodel, "%d\t%e\f%e\t%e\t%e\n", &ii, &readk, &readfreq, &readamp, &readwidth) != EOF)
+	{
+		if (ii>=0 && ii<nk)
+		{
+			(*numridges)[ii]++;
+		} else {
+			printf("ERROR: k-value out of range in model: %d\n", ii);
+			return EXIT_FAILURE;
+		}
+	}
+	rewind(fpmodel);
+	/* allocate enough for all ridges, then load them */
+	for (ii=0; ii<nk; ii++)
+	{
+		if ((*numridges)[ii]>0)
+		{
+			(*freq)[ii] = (double*) malloc((*numridges)[ii]*sizeof(double));
+			(*amp)[ii] = (double*) malloc((*numridges)[ii]*sizeof(double));
+			(*width)[ii] = (double*) malloc((*numridges)[ii]*sizeof(double));
+		}
+		for (ij=0; ij<(*numridges)[ii]; ij++)
+		{
+			ik = fscanf(fpmodel, "%d\t%e\t%e\t%e\t%e\n", &ik, &readk, &readfreq, &readamp, &readwidth);
+			if (readfreq<0.0 || readamp<0.0 || readwidth<0.0)
+			{
+				printf("ERROR: Invalid parameters in model, k=%d\n", ii);
+				return EXIT_FAILURE;
+			}
+			(*freq)[ii][ij] = readfreq;
+			(*amp)[ii][ij] = readamp;
+			(*width)[ii][ij] = readwidth;
+		}
+	}
+	fclose(fpmodel);
+}
 
 
 /* Reads parameter file fname and loads data into parameter struct *p */
