@@ -207,8 +207,8 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 			{
 				/* likelihood = log(model/data) + data/model */
 				/*deviates[num] = 0.5*(model-sub->data[iw-istw][itht])/sqrt(model*sub->data[iw-istw][itht]);*/
-				/*deviates[num] = log(model/sub->data[iw-istw][itht]) + sub->data[iw-istw][itht]/model;*/
-				deviates[num] = log(model/sub->data[iw-istw][itht]);
+				deviates[num] = log(model/sub->data[iw-istw][itht]) + sub->data[iw-istw][itht]/model;
+				/*deviates[num] = log(model/sub->data[iw-istw][itht]);*/
 				corr = (1.-sub->data[iw-istw][itht]/model)/model;
 			}
 			else

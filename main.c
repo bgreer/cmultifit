@@ -4,42 +4,6 @@
 #include <math.h>
 #include "header.h"
 
-void test_derivs(mp_par *bounds, int nr, double* p, void* private)
-{
-	int ii, ij, s, x;
-	double *ini, *fin, **deriv, delta, res, res2, res3, lh, dlh;
-	struct kslice *sub;
-	printf("testing derivatives because mpfit sucks\n");
-
-	sub = (struct kslice*)private;
-	x = 1;
-	s = NNU*NTHETA;
-	ini = calloc(s, sizeof(double));
-	fin = calloc(s, sizeof(double));
-	deriv = malloc((nr*NPEAK+NBACK)*sizeof(double*));
-	for (ii=0; ii<nr*NPEAK+NBACK; ii++)
-		deriv[ii] = calloc(s, sizeof(double));
-	
-	funk(s, nr*NPEAK+NBACK, p, ini, deriv, private);
-	delta = 1e-3*p[x];
-	p[x] += delta;
-	funk(s, nr*NPEAK+NBACK, p, fin, NULL, private);
-
-	lh = dlh = 0.0;
-	for (ii=0; ii<610; ii++)
-	{
-		for (ij=0; ij<NTHETA; ij++)
-		{
-			res = (fin[ii*NTHETA+ij]-ini[ii*NTHETA+ij])/delta;
-			res2 = deriv[x][ii*NTHETA+ij];
-			res3 = (res-res2)/res;
-			printf("%d\t%d\t%e\t%e\t%e\t%e\t%e\t%e\n", ii, ij, res, res2, res3, ini[ii*NTHETA+ij], fin[ii*NTHETA+ij], sub->data[ii][ij]);
-		}
-		printf("\n");
-	}
-	exit(0);
-}
-
 void usage (char* name)
 {
 	printf("Usage: \n%s paramfile\n", name);
@@ -55,7 +19,7 @@ int main (int argc, char* argv[])
 	double delta_nu, delta_k;
 	double ***pol, *norm;
 	double **freq, **amp, **width;
-	int *numridges;
+	int *numridges, **fit_type;
 
 	int mpreturn, index;
 	struct kslice subsection;
@@ -83,21 +47,43 @@ int main (int argc, char* argv[])
 	thtarr = malloc(ntheta*sizeof(double));
 	thtpow = malloc(ntheta*sizeof(double));
 
-	/* TODO: Check kstart and kend */
+	/* Check kstart and kend */
 	if (par.kstart > par.kend) par.kend = par.kstart;
 	if (par.kstart < 0) par.kstart = 0;
 	if (par.kstart >= nk) par.kstart = nk-1;
 	if (par.kstart < 0) par.kend = 0;
 	if (par.kend >= nk) par.kend = nk-1;
 
+	/* Read in model file verbatim */
 	read_model_file(&par, nk, &numridges, &freq, &amp, &width);
-	printf("test %d\n", numridges[20]);
 
-/* No more noise computation needed */
+	/* Decide which peaks to fit in what way */
+	fit_type = malloc(nk*sizeof(int*));
+	for (ii=0; ii<nk; ii++)
+	{
+		fit_type[ii] = 0;
+		if (numridges[ii] > 0)
+		{
+			fit_type[ii] = malloc(numridges[ii]*sizeof(int));
+			for (ij=0; ij<numridges[ii]; ij++)
+			{
+				if (par.fit_above==2)
+					fit_type[ii][ij] = 1; /* Full line profile */
+				else if (par.fit_above==1 && freq[ii][ij] >= par.ac_cutoff)
+					fit_type[ii][ij] = 2; /* Simple line profile */
+				else if (par.fit_above==0 && freq[ii][ij] >= par.ac_cutoff)
+					fit_type[ii][ij] = 0; /* Do not fit */
+				else
+					fit_type[ii][ij] = 1;
+			}
+		}
+	}
+
+	/* No more noise computation needed */
 	printf("WARNING: Maximum likelihood uncertainties not yet implemented!\n");
 	printf("\tReported error bars will be garbage.\n");
 
-/* Open output file */
+	/* Open output file */
 	fpout = fopen(par.outfname, "w");
 	if (fpout==NULL)
 	{
@@ -105,7 +91,7 @@ int main (int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 
-/* Open background output file if needed */
+	/* Open background output file if needed */
 	if (par.backfname)
 	{
 		fpback = fopen(par.backfname, "w");
@@ -288,7 +274,40 @@ int main (int argc, char* argv[])
 					mpconf, 
 					&subsection, 
 					mpres);
-	
+
+
+/* Find derivatives? */
+
+			double *newparams, *dev, **der;
+			newparams = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double));
+			for (ii=0; ii<numridges[ij]*NPEAK+NBACK; ii++)
+				newparams[ii] = param[ii];
+			dev = calloc(ntheta*(subsection.end-subsection.start+1), sizeof(double));
+			der = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double*));
+			for (ii=0; ii<numridges[ij]*NPEAK+NBACK; ii++)
+				der[ii] = calloc(ntheta*(subsection.end-subsection.start+1), sizeof(double));
+
+		for (ik=0; ik<numridges[ij]*NPEAK+NBACK; ik++)
+		{
+			double d1, d2, curv;
+			newparams[ik] = param[ik]*0.99;
+			funk(ntheta*(subsection.end-subsection.start+1), numridges[ij]*NPEAK+NBACK, 
+					newparams, dev, der, &subsection);
+			for (ii=0; ii<ntheta*(subsection.end-subsection.start+1); ii++)
+				d1 += der[ik][ii];
+			newparams[ik] = param[ik]*1.01;
+			funk(ntheta*(subsection.end-subsection.start+1), numridges[ij]*NPEAK+NBACK, 
+					newparams, dev, der, &subsection);
+			newparams[ik] = param[ik];
+			for (ii=0; ii<ntheta*(subsection.end-subsection.start+1); ii++)
+				d2 += der[ik][ii];
+
+			curv = (d2-d1)/(0.02*param[ik]);
+		
+			printf("error bar = %e\n", curv);
+			xerror[ik] = 1.0/curv;
+		}
+
 			/* Check return value of mpfit */
 			switch (mpreturn)
 			{
@@ -372,6 +391,8 @@ int main (int argc, char* argv[])
 			{
 				for (ii=0; ii<numridges[ij]; ii++)
 				{
+					if (param[ii*NPEAK] <= par.ac_cutoff)
+					{
 					if (param[ii*NPEAK+2] < 7.5)
 					{
 						printf("\tLine at %f deemed invalid: ", param[ii*NPEAK]);
@@ -401,6 +422,7 @@ int main (int argc, char* argv[])
 							param[ii*NPEAK+6], xerror[ii*NPEAK+6], 
 							param[ii*NPEAK+7], xerror[ii*NPEAK+7]
 							);
+					}
 					}
 				}
 				fflush(fpout);
