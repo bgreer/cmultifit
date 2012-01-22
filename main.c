@@ -275,39 +275,6 @@ int main (int argc, char* argv[])
 					&subsection, 
 					mpres);
 
-
-/* Find derivatives? */
-
-			double *newparams, *dev, **der;
-			newparams = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double));
-			for (ii=0; ii<numridges[ij]*NPEAK+NBACK; ii++)
-				newparams[ii] = param[ii];
-			dev = calloc(ntheta*(subsection.end-subsection.start+1), sizeof(double));
-			der = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double*));
-			for (ii=0; ii<numridges[ij]*NPEAK+NBACK; ii++)
-				der[ii] = calloc(ntheta*(subsection.end-subsection.start+1), sizeof(double));
-
-		for (ik=0; ik<numridges[ij]*NPEAK+NBACK; ik++)
-		{
-			double d1, d2, curv;
-			newparams[ik] = param[ik]*0.99;
-			funk(ntheta*(subsection.end-subsection.start+1), numridges[ij]*NPEAK+NBACK, 
-					newparams, dev, der, &subsection);
-			for (ii=0; ii<ntheta*(subsection.end-subsection.start+1); ii++)
-				d1 += der[ik][ii];
-			newparams[ik] = param[ik]*1.01;
-			funk(ntheta*(subsection.end-subsection.start+1), numridges[ij]*NPEAK+NBACK, 
-					newparams, dev, der, &subsection);
-			newparams[ik] = param[ik];
-			for (ii=0; ii<ntheta*(subsection.end-subsection.start+1); ii++)
-				d2 += der[ik][ii];
-
-			curv = (d2-d1)/(0.02*param[ik]);
-		
-			printf("error bar = %e\n", curv);
-			xerror[ik] = 1.0/curv;
-		}
-
 			/* Check return value of mpfit */
 			switch (mpreturn)
 			{

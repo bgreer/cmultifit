@@ -13,3 +13,8 @@ io.o : io.c header.h
 
 function.o : function.c header.h
 	gcc -c function.c header.h -ansi
+
+
+mpfit : mpfit.c mpfit.h
+	gcc -c mpfit.c -o mpfit.o
+	ar rcs libmpfit.a mpfit.o
