@@ -132,7 +132,7 @@ int funk_single (int m, int n, double* p, double *deviates, double **derivs, voi
 				den = w1 - p[0];
 				den = den*den + p[2]*p[2]/4.0;
 				x2 = p[1]*p[2]/(2.0*den)+p[3];
-				deviates[num] = (x2 - sub->data[iw-istw][itht]);
+				deviates[num] = (x2 - sub->data[iw-istw][itht])/x2;
 			}
 			num++;
 		}
@@ -161,7 +161,7 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, doub
 
 	/* Load subsection data */
 	sub.par = p;
-	sub.start = 0;
+	sub.start = (100.)/delta_nu;
 	sub.end = (2000.)/delta_nu;
 	if (sub.end >= nnu) sub.end = nnu-1;
 	sub.ntheta = ntheta;
@@ -239,7 +239,7 @@ int funk_back (int m, int n, double* p, double *deviates, double **derivs, void 
 			deviates[num] = 0.0;
 			if (sub->data[iw-istw][itht] > 0.0)
 			{
-				deviates[num] = (back - sub->data[iw-istw][itht]);
+				deviates[num] = (back - sub->data[iw-istw][itht])/back;
 			}
 			num++;
 		}

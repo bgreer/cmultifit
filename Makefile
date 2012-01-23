@@ -16,5 +16,5 @@ function.o : function.c header.h
 
 
 mpfit : mpfit.c mpfit.h
-	gcc -c mpfit.c -o mpfit.o
+	gcc -O2 -c mpfit.c -o mpfit.o
 	ar rcs libmpfit.a mpfit.o

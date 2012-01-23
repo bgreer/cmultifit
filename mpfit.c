@@ -1953,9 +1953,23 @@ void mp_lmpar(int n, double *r, int ldr, int *ipvt, int *ifree, double *diag,
 
 
 /************************enorm.c*************************/
- 
+
+static double mp_enorm (int n, double *x)
+{
+	int i;
+	double ans;
+	
+	ans = 0.0;
+	for (i=0; i<n; i++)
+		ans += x[i]*x[i];
+	ans = sqrt(ans);
+
+	return ans;
+}
+
+
 static 
-double mp_enorm(int n, double *x) 
+double mp_enorm_old(int n, double *x) 
 {
   /*
    *     **********
@@ -2062,6 +2076,7 @@ double mp_enorm(int n, double *x)
   /*
    *     calculation of norm.
    */
+   
   if (s1 != zero) {
     temp = s1 + (s2/x1max)/x1max;
     ans = x1max*sqrt(temp);
@@ -2082,7 +2097,7 @@ double mp_enorm(int n, double *x)
 	/* Modification! */
 	ans = 0.0;
 	for (i=0; i<n; i++)
-		ans += x[i]*x[i]; /* BAM */
+		ans += x[i]*x[i];
 	ans = sqrt(ans);
 
   return(ans);
