@@ -17,7 +17,7 @@ int main (int argc, char* argv[])
 	int ii, ij, ik;
 	int ntheta, nk, nnu;
 	double delta_nu, delta_k;
-	double ***pol, *norm;
+	double ***pol;
 	double **freq, **amp, **width;
 	int *numridges, **fit_type;
 
@@ -27,7 +27,8 @@ int main (int argc, char* argv[])
 	mp_result *mpres;
 	mp_config *mpconf;
 	mp_par *bounds;
-	double *xerror, *covar;
+	double *xerror;
+	double *covar;
 	mpres = malloc(sizeof(mp_result));
 	mpconf = malloc(sizeof(mp_config));
 	double sum, sum2, sum3;
@@ -104,7 +105,9 @@ int main (int argc, char* argv[])
 
 	if (!par.silent) printf("\nBeginning optimization, output file '%s'\n", par.outfname);
 
-/* Enter loop over all k */
+
+/* BEGIN LOOP OVER K-BINS */
+
 	for (ij=par.kstart; ij<=par.kend; ij++)
 	{
 		if (numridges[ij]>0)
@@ -113,11 +116,9 @@ int main (int argc, char* argv[])
 			param = (double*) malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double));
 			bounds = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(mp_par));
 			xerror = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double));
-			if (par.covarfname)
-				covar = malloc(((numridges[ij]*NPEAK+NBACK)*(numridges[ij]*NPEAK+NBACK))*sizeof(double));
+			covar = malloc((numridges[ij]*NPEAK+NBACK)*(numridges[ij]*NPEAK+NBACK)*sizeof(double*));
 
 			/* Do rough fit of single peaks */
-			/* TODO: fix this */
 			if (!par.silent) printf("\tDoing single ridge estimates.\n");
 			for (ii=0; ii<numridges[ij]; ii++)
 			{
@@ -130,7 +131,7 @@ int main (int argc, char* argv[])
 			if (!par.silent) printf("\tFitting background at low frequency.\n");
 			fit_back(&par, &(param[numridges[ij]*NPEAK]), &(param[numridges[ij]*NPEAK+1]), 
 				&(param[numridges[ij]*NPEAK+2]), pol, delta_nu, nnu, ntheta, ij);
-			
+
 			/* Set multifit contraints */
 			for (ii=0; ii<numridges[ij]; ii++)
 			{
@@ -170,15 +171,24 @@ int main (int argc, char* argv[])
 				bounds[ii*NPEAK+2].limits[1] = width[ij][ii]*4.0;
 
 				/* set velocities */
-				param[ii*NPEAK+3] = 1.0;
-				bounds[ii*NPEAK+3].limited[0] = bounds[ii*NPEAK+3].limited[1] = 1;
-				bounds[ii*NPEAK+3].limits[0] = -1000.0;
-				bounds[ii*NPEAK+3].limits[1] = 1000.0;
-				param[ii*NPEAK+4] = 1.0;
-				bounds[ii*NPEAK+4].limited[0] = bounds[ii*NPEAK+4].limited[1] = 1;
-				bounds[ii*NPEAK+4].limits[0] = -1000.0;
-				bounds[ii*NPEAK+4].limits[1] = 1000.0;
-
+				if (param[ii*NPEAK] < par.ac_cutoff || par.fit_above != 1)
+				{
+					param[ii*NPEAK+3] = 1.0;
+					bounds[ii*NPEAK+3].limited[0] = bounds[ii*NPEAK+3].limited[1] = 1;
+					bounds[ii*NPEAK+3].limits[0] = -1000.0;
+					bounds[ii*NPEAK+3].limits[1] = 1000.0;
+					param[ii*NPEAK+4] = 1.0;
+					bounds[ii*NPEAK+4].limited[0] = bounds[ii*NPEAK+4].limited[1] = 1;
+					bounds[ii*NPEAK+4].limits[0] = -1000.0;
+					bounds[ii*NPEAK+4].limits[1] = 1000.0;
+				} else {
+					param[ii*NPEAK+3] = 0.;
+					param[ii*NPEAK+4] = 0.;
+					bounds[ii*NPEAK+3].fixed = 1;
+					bounds[ii*NPEAK+4].fixed = 1;
+					bounds[ii*NPEAK+3].limited[0] = bounds[ii*NPEAK+3].limited[1] = 0;
+					bounds[ii*NPEAK+4].limited[0] = bounds[ii*NPEAK+4].limited[1] = 0;
+				}
 				/* set theta variation params */
 				param[ii*NPEAK+5] = 0.01;
 				bounds[ii*NPEAK+5].limited[0] = bounds[ii*NPEAK+5].limited[1] = 1;
@@ -186,6 +196,10 @@ int main (int argc, char* argv[])
 				bounds[ii*NPEAK+5].limits[1] = 1.0;
 				param[ii*NPEAK+6] = PI/2.0;
 				bounds[ii*NPEAK+6].limited[0] = bounds[ii*NPEAK+6].limited[1] = 0;
+
+				for (ik=0; ik<7; ik++)
+					if (bounds[ii*NPEAK+ik].limited[0] && param[ii*NPEAK+ik] < bounds[ii*NPEAK+ik].limits[0])
+						printf("error on param %d of peak %d\t%e %e\n", ik, ii, param[ii*NPEAK+ik], bounds[ii*NPEAK+ik].limits[0]);
 			}
 
 			for (ii=0; ii<NBACK; ii++)
@@ -198,10 +212,11 @@ int main (int argc, char* argv[])
 				bounds[numridges[ij]*NPEAK+ii].deriv_reltol = 0.0;
 				bounds[numridges[ij]*NPEAK+ii].deriv_abstol = 0.0;
 			}
+
+			/* Values and bounds for background power law */
 			bounds[numridges[ij]*NPEAK].limited[0] = 1;
 			bounds[numridges[ij]*NPEAK].limited[1] = 0;
 			bounds[numridges[ij]*NPEAK].limits[0] = 0.0;
-			param[numridges[ij]*NPEAK+1] = 100.;
 			bounds[numridges[ij]*NPEAK+1].limited[0] = bounds[numridges[ij]*NPEAK+1].limited[1] = 0;
 			bounds[numridges[ij]*NPEAK+2].limited[0] = 1;
 			bounds[numridges[ij]*NPEAK+2].limited[1] = 0;
@@ -213,7 +228,8 @@ int main (int argc, char* argv[])
 			param[numridges[ij]*NPEAK+4] = PI/2.0;
 			bounds[numridges[ij]*NPEAK+4].limited[0] = bounds[numridges[ij]*NPEAK+4].limited[1] = 0;
 
-			param[numridges[ij]*NPEAK+5] = 0.1*param[numridges[ij]*NPEAK];
+			/* Values and bounds for background lorentzian */
+			param[numridges[ij]*NPEAK+5] = 0.1*param[1];
 			bounds[numridges[ij]*NPEAK+5].limited[0] = 1;
 			bounds[numridges[ij]*NPEAK+5].limited[1] = 0;
 			bounds[numridges[ij]*NPEAK+5].limits[0] = 0.0;
@@ -224,16 +240,27 @@ int main (int argc, char* argv[])
 			param[numridges[ij]*NPEAK+7] = 1000.;
 			bounds[numridges[ij]*NPEAK+7].limited[0] = bounds[numridges[ij]*NPEAK+7].limited[1] = 1;
 			bounds[numridges[ij]*NPEAK+7].limits[0] = 500.0;
-			bounds[numridges[ij]*NPEAK+7].limits[1] = 10000.;
+			bounds[numridges[ij]*NPEAK+7].limits[1] = 5000.;
+
+			/* for brad's fake spectrum, fix background to 0 */
+			/*
+			param[numridges[ij]*NPEAK] = 0.0;
+			bounds[numridges[ij]*NPEAK].fixed = 1;
+			param[numridges[ij]*NPEAK+5] = 0.0;
+			bounds[numridges[ij]*NPEAK+5].fixed = 1;
+			*/
 
 			subsection.par = &par;
 			subsection.n = numridges[ij];
 			
 			/* Load klice struct for passing to function */
-			subsection.start = 0;
+			subsection.start = 100/delta_nu;
+			/* testing? */
+			/*
+			subsection.start = (param[0]-param[2])/delta_nu;
 			if (subsection.start < 0) subsection.start = 0;
-			
-			subsection.end = (param[(numridges[ij]-1)*NPEAK]+2.*param[(numridges[ij]-1)*NPEAK+2])/delta_nu;
+			*/
+			subsection.end = (param[(numridges[ij]-1)*NPEAK]+1.*param[(numridges[ij]-1)*NPEAK+2])/delta_nu;
 			if (subsection.end > nnu-1) subsection.end = nnu-1;
 
 			subsection.delta_nu = delta_nu;
@@ -249,9 +276,6 @@ int main (int argc, char* argv[])
 				}
 			}
 
-			bounds[0].side = 0;
-/*			test_derivs(bounds, numridges[ij], param, &subsection);*/
-
 			/* Set optimization parameters */
 			mpconf->ftol = par.ftol;
 			mpconf->xtol = par.xtol;
@@ -261,11 +285,12 @@ int main (int argc, char* argv[])
 			mpconf->nofinitecheck = 1;
 
 			mpres->xerror = xerror;
-			if (par.covarfname) mpres->covar = covar;
 			mpreturn = 1;
+
+
+
 /* Perform optimization */
-			if (!par.silent) printf("\tDoing multifit.\n");
-			
+			if (par.dofits && !par.silent) printf("\tDoing optimization...\n");			
 			if (par.dofits) mpreturn = mpfit(&funk, 
 					ntheta*(subsection.end-subsection.start+1), 
 					numridges[ij]*NPEAK+NBACK, 
@@ -275,56 +300,56 @@ int main (int argc, char* argv[])
 					&subsection, 
 					mpres);
 
+
 			/* Check return value of mpfit */
-			switch (mpreturn)
-			{
-				case MP_OK_CHI:
-					printf("\tMPFIT convergence in chi-square\n");break;
-				case MP_OK_PAR:
-					printf("\tMPFIT convergence in parameter value\n");break;
-				case MP_OK_DIR:
-					printf("\tMPFIT convergence in orthogonality\n");break;
-				case MP_MAXITER:
-					printf("\tMPFIT max iterations reached\n");break;
-				case MP_FTOL:
-					printf("\tMPFIT ftol criteria reached\n");break;
-				case MP_XTOL:
-					printf("\tMPFIT xtol criteria reached\n");break;
-				case MP_GTOL:
-					printf("\tMPFIT gtol criteria reached\n");break;
-
-				case MP_ERR_INPUT:
-					printf("\tMPFIT ERROR: input parameter error\n");break;
-				case MP_ERR_NAN:
-					printf("\tMPFIT ERROR: function returned nan\n");break;
-				case MP_ERR_MEMORY:
-					printf("\tMPFIT ERROR: memory allocation error\n");break;
-				case MP_ERR_INITBOUNDS:
-					printf("\tMPFIT ERROR: guesses inconsistent with bounds\n");break;
-				case MP_ERR_BOUNDS:
-					printf("\tMPFIT ERROR: inconsistent bounds\n");break;
-				case MP_ERR_PARAM:
-					printf("\tMPFIT ERROR: input parameter error\n");break;
-				case MP_ERR_DOF:
-					printf("\tMPFIT ERROR: too few degrees of freedom\n");break;
-
-				default:
-					printf("\tMPFIT return = %d\n", mpreturn);break;
-			}
-			
+			mpreturn_translate(mpreturn);
+		
 			/* Output optimization details */
 			if (!par.silent) 
 			{
-				printf("\tStarting chi2 = %e\n", 
+				printf("\tStarting LH = %e\n", 
 					mpres->orignorm/(ntheta*(subsection.end-subsection.start)));
-				printf("\tFinal chi2 = %e\n", 
+				printf("\tFinal LH = %e\n", 
 					mpres->bestnorm/(ntheta*(subsection.end-subsection.start)));
 				printf("\tNumber of iterations = %d\n", mpres->niter);
 				printf("\tNumber of function evals = %d\n", mpres->nfev);
 				printf("\tNumber of pegged parameters = %d\n", mpres->npegged);
 			}
 
-			/* Post-process fit parameters */
+
+			/* Determine which parameters are pegged */
+			if (mpres->npegged)
+			{
+				for (ii=0; ii<numridges[ij]; ii++)
+				{
+					for (ik=0; ik<NPEAK; ik++)
+					{
+						if (bounds[ii*NPEAK+ik].limited[0] && param[ii*NPEAK+ik] == bounds[ii*NPEAK+ik].limits[0])
+							printf("Param %d of peak %d pegged low\n", ik, ii);
+						if (bounds[ii*NPEAK+ik].limited[1] && param[ii*NPEAK+ik] == bounds[ii*NPEAK+ik].limits[1])
+							printf("Param %d of peak %d pegged high\n", ik, ii);
+					}
+				}
+				for (ik=0; ik<NBACK; ik++)
+				{
+					if (bounds[numridges[ij]*NPEAK+ik].limited[0] && 
+							param[numridges[ij]*NPEAK+ik] == bounds[numridges[ij]*NPEAK+ik].limits[0])
+						printf("Param %d of back pegged low\n", ik);
+					if (bounds[numridges[ij]*NPEAK+ik].limited[1] && 
+							param[numridges[ij]*NPEAK+ik] == bounds[numridges[ij]*NPEAK+ik].limits[1])
+						printf("Param %d of back pegged high\n", ik);
+				}
+			}
+
+
+			/* Compute error bars */
+			errbars(numridges[ij]*NPEAK+NBACK, param, &subsection, &covar);
+			
+			/* Load covar into xerror because I'm lazy */
+			for (ii=0; ii<numridges[ij]*NPEAK+NBACK; ii++)
+				xerror[ii] = sqrt(fabs(covar[ii*(numridges[ij]*NPEAK+NBACK)+ii]));
+
+			/* Post-process anisotropy parameters (negative amplitude -> pi/2 shift) */
 			for (ii=0; ii<numridges[ij]; ii++)
 			{
 				if (param[ii*NPEAK+5] < 0.0)
@@ -345,20 +370,23 @@ int main (int argc, char* argv[])
 			if (param[numridges[ij]*NPEAK+4] < 0.0)
 				param[numridges[ij]*NPEAK+4] += PI;
 
+
 			/* Print fit debug */
 			if (par.debugfname) output_debug(&par, pol, ntheta, nk, nnu, ij, ntheta*(subsection.end-subsection.start+1), 
 					numridges[ij]*NPEAK+NBACK, 
 					param, delta_nu, delta_k);
-		
+
+
 			/* Print covariance matrix */
-			if (par.covarfname) output_matrix(covar, numridges[ij]*NPEAK+NBACK, &par);
+/*			if (par.covarfname) output_matrix(covar, numridges[ij]*NPEAK+NBACK, &par);*/
+
 
 			/* Output fit to file if valid */
-			if (mpreturn!=MP_MAXITER && mpreturn > 0 && mpreturn!=3)
+			if (mpreturn!=MP_MAXITER && mpreturn > 0) /* Removed 'invalid if mpreturn=3' */
 			{
 				for (ii=0; ii<numridges[ij]; ii++)
 				{
-					if (param[ii*NPEAK] <= par.ac_cutoff)
+					if (param[ii*NPEAK] <= par.ac_cutoff || 1)
 					{
 					if (param[ii*NPEAK+2] < 7.5)
 					{
@@ -394,6 +422,7 @@ int main (int argc, char* argv[])
 				}
 				fflush(fpout);
 			
+
 				/* Output background params to separate file */
 				if (par.backfname)
 				{
@@ -417,9 +446,13 @@ int main (int argc, char* argv[])
 				free(subsection.data[ii-subsection.start]);
 			}
 			free(subsection.data);
-			if (par.covarfname) free(covar);
+			free(covar);
 		}
 	}
+
+/* END LOOP OVER K-BINS */
+
+
 	fclose(fpout);
 	if (par.backfname) fclose(fpback);
 	
@@ -456,7 +489,44 @@ int main (int argc, char* argv[])
 		free(pol[ii]);
 	}
 	free(pol);
-	free(norm);
 	return EXIT_SUCCESS;
 }
 
+void mpreturn_translate (int mpreturn)
+{
+	switch (mpreturn)
+	{
+		case MP_OK_CHI:
+			printf("\tMPFIT convergence in chi-square\n");break;
+		case MP_OK_PAR:
+			printf("\tMPFIT convergence in parameter value\n");break;
+		case MP_OK_DIR:
+			printf("\tMPFIT convergence in orthogonality\n");break;
+		case MP_MAXITER:
+			printf("\tMPFIT max iterations reached\n");break;
+		case MP_FTOL:
+			printf("\tMPFIT ftol criteria reached\n");break;
+		case MP_XTOL:
+			printf("\tMPFIT xtol criteria reached\n");break;
+		case MP_GTOL:
+			printf("\tMPFIT gtol criteria reached\n");break;
+
+		case MP_ERR_INPUT:
+			printf("\tMPFIT ERROR: input parameter error\n");break;
+		case MP_ERR_NAN:
+			printf("\tMPFIT ERROR: function returned nan\n");break;
+		case MP_ERR_MEMORY:
+			printf("\tMPFIT ERROR: memory allocation error\n");break;
+		case MP_ERR_INITBOUNDS:
+			printf("\tMPFIT ERROR: guesses inconsistent with bounds\n");break;
+		case MP_ERR_BOUNDS:
+			printf("\tMPFIT ERROR: inconsistent bounds\n");break;
+		case MP_ERR_PARAM:
+			printf("\tMPFIT ERROR: input parameter error\n");break;
+		case MP_ERR_DOF:
+			printf("\tMPFIT ERROR: too few degrees of freedom\n");break;
+
+		default:
+			printf("\tMPFIT return = %d\n", mpreturn);break;
+	}
+}

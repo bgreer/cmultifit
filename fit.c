@@ -5,8 +5,6 @@
 #include "mpfit.h"
 #include "header.h"
 
-/* TODO: make these use same weighting as multifit */
-
 int fit_peak (struct params* p, double *freq, double *amp, double *width, double*** pol, double delta_nu, double delta_k, int nnu, int ntheta, int k)
 {
 	int ii, ij, ik, mpreturn;
@@ -20,7 +18,7 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 	param[0] = *freq;
 	param[1] = *amp;
 	param[2] = *width;
-	param[3] = (*amp);
+	param[3] = (*amp)*0.1;
 
 	mpres2 = (mp_result*) calloc(1,sizeof(mp_result));
 	mpconf = (mp_config*) calloc(1, sizeof(mp_config));
@@ -62,8 +60,8 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 	bounds[1].limited[0] = 1;
 	bounds[1].limits[0] = 0.0;
 	bounds[2].limited[0] = bounds[2].limited[1] = 1;
-	bounds[2].limits[0] = param[2]/4.;
-	bounds[2].limits[1] = param[2]*4.;
+	bounds[2].limits[0] = param[2]/2.;
+	bounds[2].limits[1] = param[2]*2.;
 	bounds[3].limited[0] = 1;
 	bounds[3].limited[1] = 0;
 	bounds[3].limits[0] = 0.0;
@@ -80,7 +78,7 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 	mpreturn = mpfit(&funk_single, ntheta*(sub.end-sub.start+1), 4, 
 					param, bounds, mpconf, &sub, mpres2);
 	*freq = param[0];
-	*amp = param[1];/**20.;*param[0];*/
+	*amp = param[1]+param[3];/**20.;*param[0];*/
 	*width = param[2];
 
 	FILE *fp;
@@ -88,9 +86,12 @@ int fit_peak (struct params* p, double *freq, double *amp, double *width, double
 	fp = fopen("debug2", "w");
 	for (ii=sub.start; ii<=sub.end; ii++)
 	{
+		for (ij=0; ij<ntheta; ij++)
+		{
 		den = ii*delta_nu - *freq;
 		den = den*den + (*width)*(*width)/4.0;
-		fprintf(fp, "%f\t%f\t%f\n", ii*delta_nu, param[3]+(*amp)*(*width)/(2.0*den), sub.data[ii-sub.start][0]);
+		fprintf(fp, "%f\t%f\t%f\n", ii*delta_nu, param[3]+(*amp)*(*width)/(2.0*den), sub.data[ii-sub.start][ij]);
+		}
 	}
 	fclose(fp);
 
@@ -161,8 +162,8 @@ int fit_back (struct params* p, double* amp, double* cutoff, double* power, doub
 
 	/* Load subsection data */
 	sub.par = p;
-	sub.start = (100.)/delta_nu;
-	sub.end = (2000.)/delta_nu;
+	sub.start = (300.)/delta_nu;
+	sub.end = (1500.)/delta_nu;
 	if (sub.end >= nnu) sub.end = nnu-1;
 	sub.ntheta = ntheta;
 	sub.delta_nu = delta_nu;

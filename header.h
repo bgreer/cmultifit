@@ -1,4 +1,3 @@
-#include <gsl/gsl_multimin.h>
 #include "fitsio.h"
 #include "mpfit.h"
 
@@ -64,7 +63,7 @@ struct params
 double *thtarr, *thtpow;
 
 /* main.c */
-
+void mpreturn_translate (int mpreturn);
 
 /* fit.c */
 int fit_peak (struct params* p, double *freq, double *amp, double *width, 
@@ -85,7 +84,12 @@ void read_param_file (char* fname, struct params* p);
 void trim (char* str);
 
 /* function.c */
-double ml_funk (const gsl_vector *v, void* params);
-void ml_dfunk (const gsl_vector *v, void *params, gsl_vector *g);
-void ml_fdfunk (const gsl_vector *v, void *params, double *f, gsl_vector *g);
 int funk(int m, int n, double* p, double* deviates, double**derivs, void* private_data);
+
+/* errbars.c */
+void errbars (int numparams, double *p, struct kslice *ks, double **covar);
+void fisher (int numparams, double *p, struct kslice *ks, double *covar);
+double model (double *p, struct kslice *ks, int inu, int itht);
+void dm (double *p, struct kslice *ks, int inu, int itht, double *d);
+void d2m (double *p, struct kslice *ks, int inu, int itht, double **d);
+

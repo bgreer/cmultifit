@@ -1,12 +1,16 @@
 # Parameter file for cmultifit (# starts a comment)
 
 # first line is main spectrum to read
+#testspec/new_su_rsb.avgpspec_fd15.2099.+45.0.+30.0.mean.fits
+#testspec/lat15.000Nlon150.000.uf.fits
+#testspec/power_gam0.0_n10_seed0.0_128_polar.fits
 ../hmi/new_su_rsb.avgpspec_fd15.2099.-30.0.+00.0.mean.fits
-#../simring/4deg/spec_180.00_+00.00_pr.fits
-#../tests/hmi_5deg_9hr/new_5deg.fits
 
 # second line is model file
 hmi_trunc.model
+#new.model
+#mdi_32.model
+#bspec_128.model
 
 # third line is the file to output to
 out
@@ -45,7 +49,7 @@ out
 
 # Max number of iterations.
 # If this number is hit before convergence, fit is deemed invalid
-800
+400
 
 
 # Next are filenames for debug output. Fair warning, they produce a lot of data
@@ -78,10 +82,10 @@ backcoefs
 1
 
 # Acoustic cutoff frequency (in uHz)
-6000
+5200
 
 # Fit simple peaks above acoustic cutoff frequency
 # 0 = no fits above
 # 1 = simple fits (no velocities)
 # 2 = full fits (ignore cutoff frequency)
-0
+2

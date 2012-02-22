@@ -157,7 +157,7 @@ int read_fits_file (double ****spec, struct params* p,
 int read_model_file (struct params *par, int nk, int **numridges, double ***freq, double ***amp, double ***width)
 {
 	FILE *fpmodel;
-	int ii, ij, ik;
+	int ii, ij, ik, il;
 	float readfreq, readamp, readwidth, readk;
 
 	if (!par->silent) printf("Reading model from %s\n", par->modelfname);
@@ -196,7 +196,7 @@ int read_model_file (struct params *par, int nk, int **numridges, double ***freq
 		}
 		for (ij=0; ij<(*numridges)[ii]; ij++)
 		{
-			ik = fscanf(fpmodel, "%d\t%e\t%e\t%e\t%e\n", &ik, &readk, &readfreq, &readamp, &readwidth);
+			il = fscanf(fpmodel, "%d\t%e\t%e\t%e\t%e\n", &ik, &readk, &readfreq, &readamp, &readwidth);
 			if (readfreq<0.0 || readamp<0.0 || readwidth<0.0)
 			{
 				printf("ERROR: Invalid parameters in model, k=%d\n", ii);
@@ -204,7 +204,7 @@ int read_model_file (struct params *par, int nk, int **numridges, double ***freq
 			}
 			(*freq)[ii][ij] = readfreq;
 			(*amp)[ii][ij] = readamp;
-			(*width)[ii][ij] = readwidth;
+			(*width)[ii][ij] = readwidth*0.7;
 		}
 	}
 	fclose(fpmodel);
