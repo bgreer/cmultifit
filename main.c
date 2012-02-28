@@ -428,7 +428,8 @@ int main (int argc, char* argv[])
 				{
 					fprintf(fpback, "%d\t%f", ij, ij*delta_k);
 					for (ik=0; ik<NBACK; ik++)
-						fprintf(fpback, "\t%e", param[numridges[ij]*NPEAK+ik]);
+						fprintf(fpback, "\t%e\t%e", param[numridges[ij]*NPEAK+ik], 
+							xerror[numridges[ij]*NPEAK+ik]);
 					fprintf(fpback, "\n");
 					fflush(fpback);
 				}

@@ -34,7 +34,7 @@ out
 
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
-10 10
+15 15
 
 # Next are parameters for fit convergence
 
