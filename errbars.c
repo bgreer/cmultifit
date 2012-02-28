@@ -25,7 +25,7 @@ void errbars (int numparams, double *p, struct kslice *ks, double **covar)
 	int ii, ij, ik;
 	lapack_int n, lda, info, worksize;
 	char c;
-	double *fish, *work;
+	double *fish, *fish2, *work;
 	int *piv;
 
 	printf("BEGIN ERROR BAR COMPUTATION\nUSER ENCOURAGED TO PRAY\n");
@@ -33,10 +33,12 @@ void errbars (int numparams, double *p, struct kslice *ks, double **covar)
 	c = 'U';
 	fish = malloc(numparams*numparams*sizeof(double));
 	piv = malloc(numparams*numparams*sizeof(int));
+	fish2 = malloc(numparams*numparams*sizeof(double));
 
 	/* compute fisher information matrix */
 	fisher(numparams, p, ks, fish);
-
+	fisher(numparams, p, ks, fish);
+/*
 	printf("PERFORMING DECOMPOSITION\n");
 	n = numparams;
 	lda = numparams;
@@ -47,12 +49,12 @@ void errbars (int numparams, double *p, struct kslice *ks, double **covar)
 	work = malloc(worksize*sizeof(double));
 	dgetri_(&n, fish, &lda, piv, work, &worksize, &info);
 	printf("inverse info = %d\n", info);
-
+*/
 	/* compute inverse of fisher information matrix */
 	for (ii=0; ii<numparams; ii++)
 	{
 		for (ij=0; ij<numparams; ij++)
-			printf("%d\t%d\t%e\n", ii, ij, fish[ii*numparams+ij]);
+			printf("%d\t%d\t%e\n", ii, ij, fish[ii*numparams+ij]-fish2[ii*numparams+ij]);
 		printf("\n");
 	}
 
