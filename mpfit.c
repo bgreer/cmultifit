@@ -1147,30 +1147,30 @@ int mp_fdjac2(mp_func funct,
 
     if (dsidei <= 1) {
       /* COMPUTE THE ONE-SIDED DERIVATIVE */
-		if (! debug) {
-			/* Non-debug path for speed */
-			for (i=0; i<m; i++, ij++) {
-		  		fjac[ij] = (wa[i] - fvec[i])/h; /* fjac[i+m*j] */
-			}
-   		 } else {
-			/* Debug path for correctness */
-			printf("01\n");
-			for (i=0; i<m; i++, ij++) {
-				double fjold = fjac[ij];
-			  	fjac[ij] = (wa[i] - fvec[i])/h; /* fjac[i+m*j] */
-			  	if ((da == 0 && dr == 0 && (fjold != 0 || fjac[ij] != 0)) ||
-			    		((da != 0 || dr != 0) && (fabs(fjold-fjac[ij]) > da + fabs(fjold)*dr))) {
-					printf("   %10d %10.4g %10.4g %10.4g %10.4g %10.4g\n", 
-						i, fvec[i], fjold, fjac[ij], fjold-fjac[ij], 
-				   		(fjold == 0)?(0):((fjold-fjac[ij])/fjold));
-				} else printf("%e  %e  %e  %e\n", fjold, fjac[ij], da, dr);
-			}
-		}
+      if (! debug) {
+	/* Non-debug path for speed */
+	for (i=0; i<m; i++, ij++) {
+	  fjac[ij] = (wa[i] - fvec[i])/h; /* fjac[i+m*j] */
+	}
+      } else {
+	/* Debug path for correctness */
+	for (i=0; i<m; i++, ij++) {
+	  double fjold = fjac[ij];
+	  fjac[ij] = (wa[i] - fvec[i])/h; /* fjac[i+m*j] */
+	  if ((da == 0 && dr == 0 && (fjold != 0 || fjac[ij] != 0)) ||
+	      ((da != 0 || dr != 0) && (fabs(fjold-fjac[ij]) > da + fabs(fjold)*dr))) {
+	    printf("   %10d %10.4g %10.4g %10.4g %10.4g %10.4g\n", 
+		   i, fvec[i], fjold, fjac[ij], fjold-fjac[ij], 
+		   (fjold == 0)?(0):((fjold-fjac[ij])/fjold));
+	  }
+	}
+      }
+
     } else {
-		/* COMPUTE THE TWO-SIDED DERIVATIVE */
-		for (i=0; i<m; i++, ij++) {
-			fjac[ij] = wa[i];    /* Store temp data: fjac[i+m*j] */
-     	}
+      /* COMPUTE THE TWO-SIDED DERIVATIVE */
+      for (i=0; i<m; i++, ij++) {
+	fjac[ij] = wa[i];    /* Store temp data: fjac[i+m*j] */
+      }
 
       /* Evaluate at x - h */
       x[ifree[j]] = temp - h;
@@ -1953,23 +1953,9 @@ void mp_lmpar(int n, double *r, int ldr, int *ipvt, int *ifree, double *diag,
 
 
 /************************enorm.c*************************/
-
-static double mp_enorm (int n, double *x)
-{
-	int i;
-	double ans;
-	
-	ans = 0.0;
-	for (i=0; i<n; i++)
-		ans += x[i]*x[i];
-	ans = sqrt(ans);
-
-	return ans;
-}
-
-
+ 
 static 
-double mp_enorm_old(int n, double *x) 
+double mp_enorm(int n, double *x) 
 {
   /*
    *     **********
@@ -2076,7 +2062,6 @@ double mp_enorm_old(int n, double *x)
   /*
    *     calculation of norm.
    */
-   
   if (s1 != zero) {
     temp = s1 + (s2/x1max)/x1max;
     ans = x1max*sqrt(temp);
@@ -2093,13 +2078,6 @@ double mp_enorm_old(int n, double *x)
     {
       ans = x3max*sqrt(s3);
     }
-
-	/* Modification! */
-	ans = 0.0;
-	for (i=0; i<n; i++)
-		ans += x[i]*x[i];
-	ans = sqrt(ans);
-
   return(ans);
   /*
    *     last card of function enorm.

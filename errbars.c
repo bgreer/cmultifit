@@ -25,7 +25,8 @@ void errbars (int numparams, double *p, struct kslice *ks, double **covar)
 	int ii, ij, ik;
 	lapack_int n, lda, info, worksize;
 	char c;
-	double *fish, *fish2, *work;
+	double *fish, *fish2, *work, *rscale, *cscale;
+	double row, col, amax;
 	int *piv;
 
 	printf("BEGIN ERROR BAR COMPUTATION\nUSER ENCOURAGED TO PRAY\n");
@@ -34,11 +35,23 @@ void errbars (int numparams, double *p, struct kslice *ks, double **covar)
 	fish = malloc(numparams*numparams*sizeof(double));
 	piv = malloc(numparams*numparams*sizeof(int));
 	fish2 = malloc(numparams*numparams*sizeof(double));
+	rscale = malloc(numparams*sizeof(double));
+	cscale = malloc(numparams*sizeof(double));
 
 	/* compute fisher information matrix */
 	fisher(numparams, p, ks, fish);
-	fisher(numparams, p, ks, fish);
+	fisher(numparams, p, ks, fish2);
+
+	n = numparams;
+	lda = numparams;
+	dgeequ_(&n, &n, fish, &lda, rscale, cscale, &row, &col, &amax, &info);
+	printf("scale: %d  %e  %e  %e\n", info, row, col, amax);
 /*
+	for (ii=0; ii<numparams; ii++)
+		for (ij=0; ij<numparams; ij++)
+			fish[ii*numparams+ij] *= rscale[ii]*cscale[ij];
+*/
+
 	printf("PERFORMING DECOMPOSITION\n");
 	n = numparams;
 	lda = numparams;
@@ -49,15 +62,20 @@ void errbars (int numparams, double *p, struct kslice *ks, double **covar)
 	work = malloc(worksize*sizeof(double));
 	dgetri_(&n, fish, &lda, piv, work, &worksize, &info);
 	printf("inverse info = %d\n", info);
+/*
+	for (ii=0; ii<numparams; ii++)
+		for (ij=0; ij<numparams; ij++)
+			fish[ii*numparams+ij] *= rscale[ij]*cscale[ii];
 */
 	/* compute inverse of fisher information matrix */
+/*
 	for (ii=0; ii<numparams; ii++)
 	{
 		for (ij=0; ij<numparams; ij++)
-			printf("%d\t%d\t%e\n", ii, ij, fish[ii*numparams+ij]-fish2[ii*numparams+ij]);
+			printf("%d\t%d\t%e\n", ii, ij, (fish[ii*numparams+ij]));
 		printf("\n");
 	}
-
+*/
 	/* return */
 	*covar = fish;
 
@@ -110,7 +128,6 @@ void fisher (int numparams, double *p, struct kslice *ks, double *A)
 				{
 					/* add contribution to matrix element ii,ij */
 					A[ii*numparams+ij] += d2[ii][ij]*corr1 + d1[ii]*d1[ij]*corr2;
-					/*if (ii!=ij) A[ii*numparams+ij] -= d1[ii]*d1[ij]*corr2;*/
 				}
 			}
 		}
@@ -192,14 +209,14 @@ void d2m (double *p, struct kslice *ks, int inu, int itht, double **d)
 		d[ii*NPEAK+2][ii*NPEAK+5] = 0.5*A*co/den - 0.5*A*G*G*co/(den*den);
 		d[ii*NPEAK+2][ii*NPEAK+6] = A*p[ii*NPEAK+5]*sin(twot)/den - A*G*G*p[ii*NPEAK+5]*sin(twot)/(den*den);
 		/* PRIMARY: 3 */
-		d[ii*NPEAK+3][ii*NPEAK+3] = akt*akt*A*G*anis*cos(tht)*cos(tht)/(TWOPI*TWOPI*den*den) - 4.*akt*akt*A*G*anis*cos(tht)*cos(tht)*den1*den1/(TWOPI*TWOPI*den*den*den);
-		d[ii*NPEAK+3][ii*NPEAK+4] = akt*akt*A*G*anis*cos(tht)*sin(tht)/(TWOPI*TWOPI*den*den) - 4.*akt*akt*A*G*anis*cos(tht)*sin(tht)*den1*den1/(TWOPI*TWOPI*den*den*den);
-		d[ii*NPEAK+3][ii*NPEAK+5] = akt*A*G*co*cos(tht)*den1/(TWOPI*den*den);
-		d[ii*NPEAK+3][ii*NPEAK+6] = akt*A*G*p[ii*NPEAK+5]*sin(twot)*cos(tht)*den1/(PI*den*den);
+		d[ii*NPEAK+3][ii*NPEAK+3] = -akt*akt*A*G*anis*cos(tht)*cos(tht)/(TWOPI*TWOPI*den*den) + 4.*akt*akt*A*G*anis*cos(tht)*cos(tht)*den1*den1/(TWOPI*TWOPI*den*den*den);
+		d[ii*NPEAK+3][ii*NPEAK+4] = -akt*akt*A*G*anis*cos(tht)*sin(tht)/(TWOPI*TWOPI*den*den) + 4.*akt*akt*A*G*anis*cos(tht)*sin(tht)*den1*den1/(TWOPI*TWOPI*den*den*den);
+		d[ii*NPEAK+3][ii*NPEAK+5] = -akt*A*G*co*cos(tht)*den1/(TWOPI*den*den);
+		d[ii*NPEAK+3][ii*NPEAK+6] = -akt*A*G*p[ii*NPEAK+5]*sin(twot)*cos(tht)*den1/(PI*den*den);
 		/* PRIMARY: 4 */
-		d[ii*NPEAK+4][ii*NPEAK+4] = akt*akt*A*G*anis*sin(tht)*sin(tht)/(TWOPI*TWOPI*den*den) - 4.*akt*akt*A*G*anis*sin(tht)*sin(tht)*den1*den1/(TWOPI*TWOPI*den*den*den);
-		d[ii*NPEAK+4][ii*NPEAK+5] = akt*A*G*co*sin(tht)*den1/(TWOPI*den*den);
-		d[ii*NPEAK+4][ii*NPEAK+6] = akt*A*G*p[ii*NPEAK+5]*sin(twot)*sin(tht)*den1/(PI*den*den);
+		d[ii*NPEAK+4][ii*NPEAK+4] = -akt*akt*A*G*anis*sin(tht)*sin(tht)/(TWOPI*TWOPI*den*den) + 4.*akt*akt*A*G*anis*sin(tht)*sin(tht)*den1*den1/(TWOPI*TWOPI*den*den*den);
+		d[ii*NPEAK+4][ii*NPEAK+5] = -akt*A*G*co*sin(tht)*den1/(TWOPI*den*den);
+		d[ii*NPEAK+4][ii*NPEAK+6] = -akt*A*G*p[ii*NPEAK+5]*sin(twot)*sin(tht)*den1/(PI*den*den);
 		/* PRIMARY: 5 */
 		d[ii*NPEAK+5][ii*NPEAK+5] = 0.0;
 		d[ii*NPEAK+5][ii*NPEAK+6] = A*G*p[ii*NPEAK+5]*sin(twot)/den;
@@ -257,15 +274,21 @@ void d2m (double *p, struct kslice *ks, int inu, int itht, double **d)
 
 	if (p[offset+5]>0.0)
 	{
-		/* PRIMARY: 5 */
+		A = p[offset+5];
+		G = p[offset+7];
+		den1 = w1 - p[offset+6];
+		den = den1*den1 + 0.25*G*G;
+		lor = 0.5*A*G / den;
+
+		/* PRIMARY: 5 amp*/
 		d[offset+5][offset+5] = 0.0;
-		d[offset+5][offset+6] = 0.0;
-		d[offset+5][offset+7] = 0.0;
-		/* PRIMARY: 6 */
-		d[offset+6][offset+6] = 0.0;
-		d[offset+6][offset+7] = 0.0;
-		/* PRIMARY: 7 */
-		d[offset+7][offset+7] = 0.0;
+		d[offset+5][offset+6] = G*den1/(den*den);
+		d[offset+5][offset+7] = 0.5/den - 0.5*G*G/(den*den);
+		/* PRIMARY: 6 freq */
+		d[offset+6][offset+6] = -A*G/(den*den) - 4.*A*G*den1*den1/(den*den*den);
+		d[offset+6][offset+7] = A*den1/(den*den) - 2.*A*G*G*den1/(den*den*den);
+		/* PRIMARY: 7 width */
+		d[offset+7][offset+7] = -1.5*A*G/(den*den) + A*G*G*G/(den*den*den);
 	} else {
 		d[offset+5][offset+5] = 0.0;
 		d[offset+5][offset+6] = 0.0;
@@ -285,7 +308,8 @@ void d2m (double *p, struct kslice *ks, int inu, int itht, double **d)
 void dm (double *p, struct kslice *ks, int inu, int itht, double *d)
 {
 	int ii, ij, nr, offset;
-	double lor, w1, tht, akt, back, backw, back2, den, co;
+	double lor, w1, tht, akt, back, backw, back2, den, co, A, G, twot, anis, shift, den1;
+	double denp, po;
 
 	nr = ks->n;
 	offset = nr*NPEAK;
@@ -304,35 +328,42 @@ void dm (double *p, struct kslice *ks, int inu, int itht, double *d)
 	/* loop over ridges */
 	for (ii=0; ii<nr; ii++)
 	{
-		co = cos(2.0*(tht-p[ii*NPEAK+6]));
-		den = w1 - p[ii*NPEAK] + akt*(p[ii*NPEAK+3]*cos(tht) + p[ii*NPEAK+4]*sin(tht))/TWOPI;
-		den = den*den + 0.25*p[ii*NPEAK+2]*p[ii*NPEAK+2];
-		lor = 0.5*p[ii*NPEAK+1]*p[ii*NPEAK+2] * (1.+p[ii*NPEAK+5]*co) / den;
+		A = p[ii*NPEAK+1];
+		G = p[ii*NPEAK+2];
+		twot = 2.0*(tht-p[ii*NPEAK+6]);
+		co = cos(twot);
+		anis = 1.0+p[ii*NPEAK+5]*co;
+		shift = akt*(p[ii*NPEAK+3]*cos(tht) + p[ii*NPEAK+4]*sin(tht))/TWOPI;
+		den1 = w1 - p[ii*NPEAK] + shift;
+		den = den1*den1 + 0.25*G*G;
+		lor = 0.5*A*G * anis / den;
 
 		/* compute derivative and place in d[] */
-		d[ii*NPEAK+0] = 4.0*lor*lor*den
-							/(p[ii*NPEAK+1]*p[ii*NPEAK+2]*(1.+p[ii*NPEAK+5]*co));
-		d[ii*NPEAK+1] = lor/p[ii*NPEAK+1];
-		d[ii*NPEAK+2] = lor*(1.-lor*p[ii*NPEAK+2]/(1.+p[ii*NPEAK+5]*co) 
-							/p[ii*NPEAK+1])/p[ii*NPEAK+2];
-		d[ii*NPEAK+3] = -lor*lor*den*(akt*cos(tht)/PI)*2. 
-							/(p[ii*NPEAK+1]*p[ii*NPEAK+2]*(1.+p[ii*NPEAK+5]*co));
-		d[ii*NPEAK+4] = -lor*lor*den*(akt*sin(tht)/PI)*2.
-							/(p[ii*NPEAK+1]*p[ii*NPEAK+2]*(1.+p[ii*NPEAK+5]*co));
-		d[ii*NPEAK+5] = lor*co/(1.+p[ii*NPEAK+5]*co);
-		d[ii*NPEAK+6] = lor*2.*p[ii*NPEAK+5]*sin(2.*(tht-p[ii*NPEAK+6])) 
-							/(1.+p[ii*NPEAK+5]*co);
+		d[ii*NPEAK+0] = -A*G*anis*den1/(den*den);
+		d[ii*NPEAK+1] = 0.5*G*anis/den;
+		d[ii*NPEAK+2] = 0.5*A*anis/den - 0.5*A*G*G*anis/(den*den);
+		d[ii*NPEAK+3] = -akt*A*G*anis*cos(tht)*den1/(TWOPI*den*den); 
+		d[ii*NPEAK+4] = -akt*A*G*anis*sin(tht)*den1/(TWOPI*den*den);
+		d[ii*NPEAK+5] = 0.5*A*G*co/den;
+		d[ii*NPEAK+6] = A*G*p[ii*NPEAK+5]*sin(twot)/den; 
 	}
 	/* compute background */
 	if (p[offset+0] > 0.0)
 	{
-		d[offset+0] = backw/p[offset+0];
-		d[offset+1] = backw*back*p[offset+2]*pow(w1/p[offset+1],p[offset+2]) 
-							/ (p[offset+0]*p[offset+1]);
+		twot = 2.*(tht-p[offset+4]);
+		co = cos(twot);
+		anis = 1.0 + p[offset+3]*co;
+		den1 = w1/p[offset+1];
+		denp = pow(den1, p[offset+2]);
+		den = denp+1.;
+		po = p[offset]*anis/den;
+
+		d[offset+0] = anis/den;
+		d[offset+1] = p[offset+2]*denp*A*anis/(den*den*p[offset+1]); 
 		d[offset+2] = -backw*back*log(w1/p[offset+1]) 
 								* pow(w1/p[offset+1], p[offset+2]) / p[offset];
-		d[offset+3] = back*cos(2.*(tht-p[offset+4]));
-		d[offset+4] = back*2.0*p[offset+3]*sin(2.*(tht-p[offset+4]));
+		d[offset+3] = A*co/den;
+		d[offset+4] = 2.*A*p[offset+3]*sin(twot)/den;
 	} else {
 		d[offset+0] = 0.0;
 		d[offset+1] = 0.0;
@@ -344,9 +375,15 @@ void dm (double *p, struct kslice *ks, int inu, int itht, double *d)
 
 	if (p[offset+5]>0.0)
 	{
-		d[offset+5] = back2/p[offset+5];
-		d[offset+6] = back2*back2*4.*(w1-p[offset+6])/(p[offset+5]*p[offset+7]);
-		d[offset+7] = back2*(1.-back2*p[offset+7]/p[offset+5])/p[offset+7];
+		A = p[offset+5];
+		G = p[offset+7];
+		den1 = w1 - p[offset+6];
+		den = den1*den1 + 0.25*G*G;
+		lor = 0.5*A*G / den;
+
+		d[offset+5] = 0.5*G/den;
+		d[offset+6] = A*G*den1/(den*den);
+		d[offset+7] = 0.5*A/den - 0.5*A*G*G/(den*den);
 	} else {
 		d[offset+5] = 0.0;
 		d[offset+6] = 0.0;

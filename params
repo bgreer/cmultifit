@@ -34,7 +34,7 @@ out
 
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
-15 15
+0 999
 
 # Next are parameters for fit convergence
 
@@ -49,7 +49,7 @@ out
 
 # Max number of iterations.
 # If this number is hit before convergence, fit is deemed invalid
-400
+500
 
 
 # Next are filenames for debug output. Fair warning, they produce a lot of data

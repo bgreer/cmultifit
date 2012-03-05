@@ -229,7 +229,7 @@ int main (int argc, char* argv[])
 			bounds[numridges[ij]*NPEAK+4].limited[0] = bounds[numridges[ij]*NPEAK+4].limited[1] = 0;
 
 			/* Values and bounds for background lorentzian */
-			param[numridges[ij]*NPEAK+5] = 0.1*param[1];
+			param[numridges[ij]*NPEAK+5] = 0.03*param[1];
 			bounds[numridges[ij]*NPEAK+5].limited[0] = 1;
 			bounds[numridges[ij]*NPEAK+5].limited[1] = 0;
 			bounds[numridges[ij]*NPEAK+5].limits[0] = 0.0;
@@ -283,11 +283,7 @@ int main (int argc, char* argv[])
 			mpconf->covtol = 1e-14;
 			mpconf->maxiter = par.niter;
 			mpconf->nofinitecheck = 1;
-
-			mpres->xerror = xerror;
 			mpreturn = 1;
-
-
 
 /* Perform optimization */
 			if (par.dofits && !par.silent) printf("\tDoing optimization...\n");			

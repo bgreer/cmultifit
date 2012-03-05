@@ -4,7 +4,7 @@
 int funk (int m, int n, double* p, double *deviates, double **derivs, void *private)
 {
 	struct kslice *sub;
-	double akt, w1, tht, den, x2, back, back2, backw, freq, co, corr, lor;
+	double akt, w1, tht, den, x2, back, back2, backw, freq, co, corr, lor, twot, den1, anis, shift, A, G;
 	int ii, iw, istw, iendw, itht, ij, nr, num;
 	double model, lh, lh2;
 	sub = (struct kslice*) private;
@@ -42,7 +42,7 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 			{
 				/* likelihood = log(model/data) + data/model */
 				/*deviates[num] = 0.5*(model-sub->data[iw-istw][itht])/sqrt(model*sub->data[iw-istw][itht]);*/
-				deviates[num] = sqrt(log(model/sub->data[iw-istw][itht]) + sub->data[iw-istw][itht]/model);
+				deviates[num] = (log(model/sub->data[iw-istw][itht]) + sub->data[iw-istw][itht]/model);
 				/*deviates[num] = 0.7071*(model-sub->data[iw-istw][itht])/model;*/
 				corr = (1.-sub->data[iw-istw][itht]/model)/model;
 			}
@@ -61,10 +61,20 @@ int funk (int m, int n, double* p, double *deviates, double **derivs, void *priv
 						+ akt*(p[ii*NPEAK+3]*cos(tht)+p[ii*NPEAK+4]*sin(tht))/TWOPI;
 					lor = 0.5*p[ii*NPEAK+1]*p[ii*NPEAK+2]*(1.+p[ii*NPEAK+5]*co);
 					lor /= den*den + 0.25*p[ii*NPEAK+2]*p[ii*NPEAK+2];
+
+					A = p[ii*NPEAK+1];
+					G = p[ii*NPEAK+2];
+					twot = 2.0*(tht-p[ii*NPEAK+6]);
+					co = cos(twot);
+					anis = 1.0+p[ii*NPEAK+5]*co;
+					shift = akt*(p[ii*NPEAK+3]*cos(tht) + p[ii*NPEAK+4]*sin(tht))/TWOPI;
+					den1 = w1 - p[ii*NPEAK] + shift;
+					den = den1*den1 + 0.25*G*G;
+					lor = 0.5*A*G * anis / den;
+
 					/* Central frequency */
 					if (derivs[ii*NPEAK+0])
-						derivs[ii*NPEAK+0][num] = corr*lor*4.*lor*den 
-							/(p[ii*NPEAK+1]*p[ii*NPEAK+2]*(1.+p[ii*NPEAK+5]*co));
+						derivs[ii*NPEAK+0][num] = -A*G*anis*den1/(den*den); 
 					/* Amplitude */
 					if (derivs[ii*NPEAK+1])
 						derivs[ii*NPEAK+1][num] = corr*lor/p[ii*NPEAK+1];
