@@ -4,7 +4,7 @@
 #testspec/new_su_rsb.avgpspec_fd15.2099.+45.0.+30.0.mean.fits
 #testspec/lat15.000Nlon150.000.uf.fits
 #testspec/power_gam0.0_n10_seed0.0_128_polar.fits
-../hmi/new_su_rsb.avgpspec_fd15.2099.-30.0.+00.0.mean.fits
+../hmi/new_su_rsb.avgpspec_fd15.2099.+00.0.+00.0.mean.fits
 
 # second line is model file
 hmi_trunc.model
@@ -42,14 +42,14 @@ out
 1e-8
 
 # Relative parameter convergence criterium
-1e-4
+1e-5
 
 # Orthogonality convergence criterium
 1e-8
 
 # Max number of iterations.
 # If this number is hit before convergence, fit is deemed invalid
-500
+1500
 
 
 # Next are filenames for debug output. Fair warning, they produce a lot of data

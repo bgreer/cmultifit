@@ -340,7 +340,16 @@ int main (int argc, char* argv[])
 
 			/* Compute error bars */
 			errbars(numridges[ij]*NPEAK+NBACK, param, &subsection, &covar);
-			
+/*			for (ii=0; ii<numridges[ij]*NPEAK+NBACK; ii++)
+			{
+				for (ik=0; ik<numridges[ij]*NPEAK+NBACK; ik++)
+				{
+					printf("%d\t%d\t%e\n", ii, ik, covar[ii*(numridges[ij]*NPEAK+NBACK)+ik] / 
+							(param[ii]*param[ik]));
+				}
+				printf("\n");
+			}
+*/			
 			/* Load covar into xerror because I'm lazy */
 			for (ii=0; ii<numridges[ij]*NPEAK+NBACK; ii++)
 				xerror[ii] = sqrt(fabs(covar[ii*(numridges[ij]*NPEAK+NBACK)+ii]));

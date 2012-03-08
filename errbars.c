@@ -189,12 +189,12 @@ void d2m (double *p, struct kslice *ks, int inu, int itht, double **d)
 
 		/* PRIMARY: 0 */
 		d[ii*NPEAK+0][ii*NPEAK+0] = 4.*A*G*anis*den1*den1/(den*den*den) - A*G*anis/(den*den);
-		d[ii*NPEAK+0][ii*NPEAK+1] = -G*anis*den1/(den*den);
-		d[ii*NPEAK+0][ii*NPEAK+2] = 2.*A*G*G*anis*den1/(den*den*den) - A*anis*den1/(den*den);
-		d[ii*NPEAK+0][ii*NPEAK+3] = 2.*A*G*anis*den1*den1*akt*cos(tht)/(den*den*den*PI) - A*G*anis*akt*cos(tht)/(den*den*TWOPI);
-		d[ii*NPEAK+0][ii*NPEAK+4] = 2.*A*G*anis*den1*den1*akt*sin(tht)/(den*den*den*PI) - A*G*anis*akt*sin(tht)/(den*den*TWOPI);
-		d[ii*NPEAK+0][ii*NPEAK+5] = -A*G*co*den1/(den*den);
-		d[ii*NPEAK+0][ii*NPEAK+6] = -2.*A*G*p[ii*NPEAK+5]*sin(twot)*den1/(den*den);
+		d[ii*NPEAK+0][ii*NPEAK+1] = G*anis*den1/(den*den);
+		d[ii*NPEAK+0][ii*NPEAK+2] = -2.*A*G*G*anis*den1/(den*den*den) + A*anis*den1/(den*den);
+		d[ii*NPEAK+0][ii*NPEAK+3] = -2.*A*G*anis*den1*den1*akt*cos(tht)/(den*den*den*PI) + A*G*anis*akt*cos(tht)/(den*den*TWOPI);
+		d[ii*NPEAK+0][ii*NPEAK+4] = -2.*A*G*anis*den1*den1*akt*sin(tht)/(den*den*den*PI) + A*G*anis*akt*sin(tht)/(den*den*TWOPI);
+		d[ii*NPEAK+0][ii*NPEAK+5] = A*G*co*den1/(den*den);
+		d[ii*NPEAK+0][ii*NPEAK+6] = 2.*A*G*p[ii*NPEAK+5]*sin(twot)*den1/(den*den);
 		/* PRIMARY: 1 */
 		d[ii*NPEAK+1][ii*NPEAK+1] = 0.0;
 		d[ii*NPEAK+1][ii*NPEAK+2] = 0.5*anis/den - 0.5*G*G*anis/(den*den);
@@ -203,7 +203,7 @@ void d2m (double *p, struct kslice *ks, int inu, int itht, double **d)
 		d[ii*NPEAK+1][ii*NPEAK+5] = 0.5*G*co/den;
 		d[ii*NPEAK+1][ii*NPEAK+6] = G*p[ii*NPEAK+5]*sin(twot)/den;
 		/* PRIMARY: 2 */
-		d[ii*NPEAK+2][ii*NPEAK+2] = -A*G*anis/(den*den) + A*G*G*anis/(den*den*den);
+		d[ii*NPEAK+2][ii*NPEAK+2] = -1.5*A*G*anis/(den*den) + A*G*G*G*anis/(den*den*den);
 		d[ii*NPEAK+2][ii*NPEAK+3] = -A*anis*den1*akt*cos(tht)/(TWOPI*den*den) + 2.*A*G*G*anis*den1*akt*cos(tht)/(TWOPI*den*den*den);
 		d[ii*NPEAK+2][ii*NPEAK+4] = -A*anis*den1*akt*sin(tht)/(TWOPI*den*den) + 2.*A*G*G*anis*den1*akt*sin(tht)/(TWOPI*den*den*den);
 		d[ii*NPEAK+2][ii*NPEAK+5] = 0.5*A*co/den - 0.5*A*G*G*co/(den*den);
@@ -219,7 +219,7 @@ void d2m (double *p, struct kslice *ks, int inu, int itht, double **d)
 		d[ii*NPEAK+4][ii*NPEAK+6] = -akt*A*G*p[ii*NPEAK+5]*sin(twot)*sin(tht)*den1/(PI*den*den);
 		/* PRIMARY: 5 */
 		d[ii*NPEAK+5][ii*NPEAK+5] = 0.0;
-		d[ii*NPEAK+5][ii*NPEAK+6] = A*G*p[ii*NPEAK+5]*sin(twot)/den;
+		d[ii*NPEAK+5][ii*NPEAK+6] = -A*G*sin(twot)/den;
 		/*  PRIMARY: 6 */
 		d[ii*NPEAK+6][ii*NPEAK+6] = -2.*A*G*co/den;
 	}
@@ -241,14 +241,14 @@ void d2m (double *p, struct kslice *ks, int inu, int itht, double **d)
 		d[offset+0][offset+3] = co/den;
 		d[offset+0][offset+4] = 2.*p[offset+3]*sin(twot)/den;
 		/* PRIMARY: 1 */
-		d[offset+1][offset+1] = 0.0;
-		d[offset+1][offset+2] = 0.0e5;
-		d[offset+1][offset+3] = 0.0e5;
-		d[offset+1][offset+4] = 0.0e5;
+		d[offset+1][offset+1] = -(p[offset+2]+1.)*denp*po/(p[offset+1]*p[offset+1]*den) + 2.*p[offset+2]*p[offset+2]*denp*denp*po/(den*den*p[offset+1]*p[offset+1]);
+		d[offset+1][offset+2] = denp*po/(den*p[offset+1]) + p[offset+2]*denp*log(den1)*po/(p[offset+1]*den) - 2.*p[offset+2]*denp*denp*log(den1)*po/(p[offset+1]*den*den);
+		d[offset+1][offset+3] = p[offset+2]*denp*p[offset]*anis/(p[offset+1]*den*den);
+		d[offset+1][offset+4] = 2.*p[offset+2]*denp*p[offset]*p[offset+3]*sin(twot)/(p[offset+1]*den*den);
 		/* PRIMARY: 2 */
-		d[offset+2][offset+2] = 0.0e5;
-		d[offset+2][offset+3] = 0.0e5;
-		d[offset+2][offset+4] = 0.0e5;
+		d[offset+2][offset+2] = -denp*log(den1)*log(den1)*po/den + 2.*denp*denp*log(den1)*log(den1)*po/(den*den);
+		d[offset+2][offset+3] = -denp*log(den1)*p[offset]*co/(den*den);
+		d[offset+2][offset+4] = -2.*denp*log(den1)*p[offset]*p[offset+3]*sin(twot)/(den*den);
 		/* PRIMARY: 3 */
 		d[offset+3][offset+3] = 0.0;
 		d[offset+3][offset+4] = 2.*p[offset]*sin(twot)/den;
@@ -339,7 +339,7 @@ void dm (double *p, struct kslice *ks, int inu, int itht, double *d)
 		lor = 0.5*A*G * anis / den;
 
 		/* compute derivative and place in d[] */
-		d[ii*NPEAK+0] = -A*G*anis*den1/(den*den);
+		d[ii*NPEAK+0] = A*G*anis*den1/(den*den);
 		d[ii*NPEAK+1] = 0.5*G*anis/den;
 		d[ii*NPEAK+2] = 0.5*A*anis/den - 0.5*A*G*G*anis/(den*den);
 		d[ii*NPEAK+3] = -akt*A*G*anis*cos(tht)*den1/(TWOPI*den*den); 
@@ -360,8 +360,7 @@ void dm (double *p, struct kslice *ks, int inu, int itht, double *d)
 
 		d[offset+0] = anis/den;
 		d[offset+1] = p[offset+2]*denp*A*anis/(den*den*p[offset+1]); 
-		d[offset+2] = -backw*back*log(w1/p[offset+1]) 
-								* pow(w1/p[offset+1], p[offset+2]) / p[offset];
+		d[offset+2] = -denp*log(den1)*po/den; 
 		d[offset+3] = A*co/den;
 		d[offset+4] = 2.*A*p[offset+3]*sin(twot)/den;
 	} else {
