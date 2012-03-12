@@ -223,80 +223,51 @@ void d2m (double *p, struct kslice *ks, int inu, int itht, double **d)
 		/*  PRIMARY: 6 */
 		d[ii*NPEAK+6][ii*NPEAK+6] = -2.*A*G*co/den;
 	}
+
 	/* compute background */
-	if (p[offset+0] > 0.0)
-	{
-		twot = 2.*(tht-p[offset+4]);
-		co = cos(twot);
-		anis = 1.0 + p[offset+3]*co;
-		den1 = w1/p[offset+1];
-		denp = pow(den1, p[offset+2]);
-		den = denp+1.;
-		po = p[offset]*anis/den;
+	twot = 2.*(tht-p[offset+4]);
+	co = cos(twot);
+	anis = 1.0 + p[offset+3]*co;
+	den1 = w1/p[offset+1];
+	denp = pow(den1, p[offset+2]);
+	den = denp+1.;
+	po = p[offset]*anis/den;
+	/* PRIMARY: 0 */
+	d[offset+0][offset+0] = 0.0;
+	d[offset+0][offset+1] = p[offset+2]*denp*po/den/p[offset+1];
+	d[offset+0][offset+2] = -denp*log(den)*anis/(den*den);
+	d[offset+0][offset+3] = co/den;
+	d[offset+0][offset+4] = 2.*p[offset+3]*sin(twot)/den;
+	/* PRIMARY: 1 */
+	d[offset+1][offset+1] = -(p[offset+2]+1.)*denp*po/(p[offset+1]*p[offset+1]*den) + 2.*p[offset+2]*p[offset+2]*denp*denp*po/(den*den*p[offset+1]*p[offset+1]);
+	d[offset+1][offset+2] = denp*po/(den*p[offset+1]) + p[offset+2]*denp*log(den1)*po/(p[offset+1]*den) - 2.*p[offset+2]*denp*denp*log(den1)*po/(p[offset+1]*den*den);
+	d[offset+1][offset+3] = p[offset+2]*denp*p[offset]*anis/(p[offset+1]*den*den);
+	d[offset+1][offset+4] = 2.*p[offset+2]*denp*p[offset]*p[offset+3]*sin(twot)/(p[offset+1]*den*den);
+	/* PRIMARY: 2 */
+	d[offset+2][offset+2] = -denp*log(den1)*log(den1)*po/den + 2.*denp*denp*log(den1)*log(den1)*po/(den*den);
+	d[offset+2][offset+3] = -denp*log(den1)*p[offset]*co/(den*den);
+	d[offset+2][offset+4] = -2.*denp*log(den1)*p[offset]*p[offset+3]*sin(twot)/(den*den);
+	/* PRIMARY: 3 */
+	d[offset+3][offset+3] = 0.0;
+	d[offset+3][offset+4] = 2.*p[offset]*sin(twot)/den;
+	/* PRIMARY: 4 */
+	d[offset+4][offset+4] = -4.*p[offset]*(anis-1.)/den;
 
-		/* PRIMARY: 0 */
-		d[offset+0][offset+0] = 0.0;
-		d[offset+0][offset+1] = p[offset+2]*denp*po/den/p[offset+1];
-		d[offset+0][offset+2] = -denp*log(den)*anis/(den*den);
-		d[offset+0][offset+3] = co/den;
-		d[offset+0][offset+4] = 2.*p[offset+3]*sin(twot)/den;
-		/* PRIMARY: 1 */
-		d[offset+1][offset+1] = -(p[offset+2]+1.)*denp*po/(p[offset+1]*p[offset+1]*den) + 2.*p[offset+2]*p[offset+2]*denp*denp*po/(den*den*p[offset+1]*p[offset+1]);
-		d[offset+1][offset+2] = denp*po/(den*p[offset+1]) + p[offset+2]*denp*log(den1)*po/(p[offset+1]*den) - 2.*p[offset+2]*denp*denp*log(den1)*po/(p[offset+1]*den*den);
-		d[offset+1][offset+3] = p[offset+2]*denp*p[offset]*anis/(p[offset+1]*den*den);
-		d[offset+1][offset+4] = 2.*p[offset+2]*denp*p[offset]*p[offset+3]*sin(twot)/(p[offset+1]*den*den);
-		/* PRIMARY: 2 */
-		d[offset+2][offset+2] = -denp*log(den1)*log(den1)*po/den + 2.*denp*denp*log(den1)*log(den1)*po/(den*den);
-		d[offset+2][offset+3] = -denp*log(den1)*p[offset]*co/(den*den);
-		d[offset+2][offset+4] = -2.*denp*log(den1)*p[offset]*p[offset+3]*sin(twot)/(den*den);
-		/* PRIMARY: 3 */
-		d[offset+3][offset+3] = 0.0;
-		d[offset+3][offset+4] = 2.*p[offset]*sin(twot)/den;
-		/* PRIMARY: 4 */
-		d[offset+4][offset+4] = -4.*p[offset]*(anis-1.)/den;
-	} else {
-		d[offset+0][offset+0] = 0.0;
-		d[offset+0][offset+1] = 0.0;
-		d[offset+0][offset+2] = 0.0;
-		d[offset+0][offset+3] = 0.0;
-		d[offset+0][offset+4] = 0.0;
-		d[offset+1][offset+1] = 0.0;
-		d[offset+1][offset+2] = 0.0;
-		d[offset+1][offset+3] = 0.0;
-		d[offset+1][offset+4] = 0.0;
-		d[offset+2][offset+2] = 0.0;
-		d[offset+2][offset+3] = 0.0;
-		d[offset+2][offset+4] = 0.0;
-		d[offset+3][offset+3] = 0.0;
-		d[offset+3][offset+4] = 0.0;
-		d[offset+4][offset+4] = 0.0;
-	}
-
-	if (p[offset+5]>0.0)
-	{
-		A = p[offset+5];
-		G = p[offset+7];
-		den1 = w1 - p[offset+6];
-		den = den1*den1 + 0.25*G*G;
-		lor = 0.5*A*G / den;
-
-		/* PRIMARY: 5 amp*/
-		d[offset+5][offset+5] = 0.0;
-		d[offset+5][offset+6] = G*den1/(den*den);
-		d[offset+5][offset+7] = 0.5/den - 0.5*G*G/(den*den);
-		/* PRIMARY: 6 freq */
-		d[offset+6][offset+6] = -A*G/(den*den) - 4.*A*G*den1*den1/(den*den*den);
-		d[offset+6][offset+7] = A*den1/(den*den) - 2.*A*G*G*den1/(den*den*den);
-		/* PRIMARY: 7 width */
-		d[offset+7][offset+7] = -1.5*A*G/(den*den) + A*G*G*G/(den*den*den);
-	} else {
-		d[offset+5][offset+5] = 0.0;
-		d[offset+5][offset+6] = 0.0;
-		d[offset+5][offset+7] = 0.0;
-		d[offset+6][offset+6] = 0.0;
-		d[offset+6][offset+7] = 0.0;
-		d[offset+7][offset+7] = 0.0;
-	}
+	/* background lorentzian */
+	A = p[offset+5];
+	G = p[offset+7];
+	den1 = w1 - p[offset+6];
+	den = den1*den1 + 0.25*G*G;
+	lor = 0.5*A*G / den;
+	/* PRIMARY: 5 amp*/
+	d[offset+5][offset+5] = 0.0;
+	d[offset+5][offset+6] = G*den1/(den*den);
+	d[offset+5][offset+7] = 0.5/den - 0.5*G*G/(den*den);
+	/* PRIMARY: 6 freq */
+	d[offset+6][offset+6] = -A*G/(den*den) - 4.*A*G*den1*den1/(den*den*den);
+	d[offset+6][offset+7] = A*den1/(den*den) - 2.*A*G*G*den1/(den*den*den);
+	/* PRIMARY: 7 width */
+	d[offset+7][offset+7] = -1.5*A*G/(den*den) + A*G*G*G/(den*den*den);
 	
 	/* Ensure symmetry */
 	for (ii=0; ii<nr*NPEAK+NBACK; ii++)

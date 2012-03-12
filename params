@@ -34,7 +34,7 @@ out
 
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
-0 999
+22 22
 
 # Next are parameters for fit convergence
 
@@ -42,7 +42,7 @@ out
 1e-8
 
 # Relative parameter convergence criterium
-1e-5
+1e-4
 
 # Orthogonality convergence criterium
 1e-8
