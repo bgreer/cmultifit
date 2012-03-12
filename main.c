@@ -19,7 +19,7 @@ int main (int argc, char* argv[])
 	double delta_nu, delta_k;
 	double ***pol;
 	double **freq, **amp, **width;
-	int *numridges, **fit_type;
+	int *numridges, **fit_type, *ridgenum;
 
 	int mpreturn, index;
 	struct kslice subsection;
@@ -117,6 +117,7 @@ int main (int argc, char* argv[])
 			bounds = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(mp_par));
 			xerror = malloc((numridges[ij]*NPEAK+NBACK)*sizeof(double));
 			covar = malloc((numridges[ij]*NPEAK+NBACK)*(numridges[ij]*NPEAK+NBACK)*sizeof(double*));
+			ridgenum = malloc(numridges[ij]*sizeof(int));
 
 			/* Do rough fit of single peaks */
 			if (!par.silent) printf("\tDoing single ridge estimates.\n");
@@ -375,6 +376,15 @@ int main (int argc, char* argv[])
 			if (param[numridges[ij]*NPEAK+4] < 0.0)
 				param[numridges[ij]*NPEAK+4] += PI;
 
+			/* Auto-detect ridge */
+			if (par.detect_ridge)
+			{
+				for (ii=0; ii<numridges[ij]; ii++)
+					ridgenum[ii] = detect_ridge((ij+1)*delta_k, param[ii*NPEAK]);
+			} else {
+				for (ii=0; ii<numridges[ij]; ii++)
+					ridgenum[ii] = 0;
+			}
 
 			/* Print fit debug */
 			if (par.debugfname) output_debug(&par, pol, ntheta, nk, nnu, ij, ntheta*(subsection.end-subsection.start+1), 
@@ -409,7 +419,7 @@ int main (int argc, char* argv[])
 						printf("\tLine at %f deemed invalid: ", param[ii*NPEAK]);
 						printf("Zero error\n");
 					}*/ else {
-						fprintf(fpout, "%d\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%e\t%e\n", 
+						fprintf(fpout, "%d\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%f\t%e\t%e\t%e\t%d\n", 
 							ij, 
 							(ij+1)*delta_k,
 							param[ii*NPEAK]/((ij+1)*delta_k), 
@@ -420,8 +430,8 @@ int main (int argc, char* argv[])
 							param[ii*NPEAK+4], xerror[ii*NPEAK+4],
 							param[ii*NPEAK+5], xerror[ii*NPEAK+5], 
 							param[ii*NPEAK+6], xerror[ii*NPEAK+6], 
-							param[ii*NPEAK+7], xerror[ii*NPEAK+7]
-							);
+							param[ii*NPEAK+7], xerror[ii*NPEAK+7],
+							ridgenum[ii]);
 					}
 					}
 				}
@@ -453,6 +463,7 @@ int main (int argc, char* argv[])
 			}
 			free(subsection.data);
 			free(covar);
+			free(ridgenum);
 		}
 	}
 
