@@ -18,20 +18,6 @@ out
 # fourth is silent mode (1 = silent)
 0
 
-# fifth is chi squared weighting
-# 0 = normal (weighted by noise, see below)
-# 1 = maximum likelihood (weighted by fit value)
-#     no noise is computed, so next parameter is irrelevant.
-#	  Note: mpfit is not optimized for this, so it takes more iterations
-#	   you might want to increase the max # of iterations
-1
-
-# sixth is noise estimator
-# 0 = constant, set as 0.1*(global average power)
-# 1 = smoothed, set as 0.1*(local average power)
-# 2 = wavelet, uses WT to estimate noise using smallest scale fluctuations
-0
-
 # seventh is k-range for fitting, space separated
 # values outside range of spectrum are cropped to ends
 22 22
@@ -89,3 +75,8 @@ backcoefs
 # 1 = simple fits (no velocities)
 # 2 = full fits (ignore cutoff frequency)
 2
+
+# Auto-detect ridge number
+# 0 = Every fit mode is n=0
+# 1 = Auto-detect in log-log space
+1

@@ -14,19 +14,18 @@
 #define PARAM_MODEL (1)
 #define PARAM_OUTPUT (2)
 #define PARAM_SILENT (3)
-#define PARAM_WEIGHT (4)
-#define PARAM_NOISE (5)
-#define PARAM_KRANGE (6)
-#define PARAM_FTOL (7)
-#define PARAM_XTOL (8)
-#define PARAM_GTOL (9)
-#define PARAM_NITER (10)
-#define PARAM_DEBUG (11)
-#define PARAM_COVAR (12)
-#define PARAM_BACK (13)
-#define PARAM_FIT (14)
-#define PARAM_CUTOFF (15)
-#define PARAM_FITABOVE (16)
+#define PARAM_KRANGE (4)
+#define PARAM_FTOL (5)
+#define PARAM_XTOL (6)
+#define PARAM_GTOL (7)
+#define PARAM_NITER (8)
+#define PARAM_DEBUG (9)
+#define PARAM_COVAR (10)
+#define PARAM_BACK (11)
+#define PARAM_FIT (12)
+#define PARAM_CUTOFF (13)
+#define PARAM_FITABOVE (14)
+#define PARAM_RIDGE (15)
 
 /* Set which values correspond to which modes */
 #define WEIGHT_NOISE (0)
@@ -52,7 +51,7 @@ struct kslice
 struct params
 {
 	char *fitsfname, *modelfname, *outfname;
-	int silent, chiweight, dofits, fit_above;
+	int silent, dofits, fit_above, detect_ridge;
 	double ac_cutoff;
 	int kstart, kend;
 	double ftol, xtol, gtol;

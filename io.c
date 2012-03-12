@@ -252,9 +252,6 @@ void read_param_file (char* fname, struct params* p)
 				case PARAM_SILENT:
 					p->silent = atoi(buffer);
 					break;
-				case PARAM_WEIGHT:
-					p->chiweight = atoi(buffer);
-					break;
 				case PARAM_KRANGE:
 					/* split string by putting null-terminator where the space is */
 					ii=0;
@@ -305,6 +302,9 @@ void read_param_file (char* fname, struct params* p)
 					break;
 				case PARAM_FITABOVE:
 					p->fit_above = atoi(buffer);
+					break;
+				case PARAM_RIDGE:
+					p->detect_ridge = atoi(buffer);
 					break;
 			}
 			index++;
