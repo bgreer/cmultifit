@@ -92,3 +92,7 @@ double model (double *p, struct kslice *ks, int inu, int itht);
 void dm (double *p, struct kslice *ks, int inu, int itht, double *d);
 void d2m (double *p, struct kslice *ks, int inu, int itht, double **d);
 
+/* ridge.c */
+int detect_ridge (double k, double nu);
+double distance_to_ridge (double k, double nu, double a, double b, double c);
+

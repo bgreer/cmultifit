@@ -29,7 +29,7 @@ void errbars (int numparams, double *p, struct kslice *ks, double **covar)
 	double row, col, amax;
 	int *piv;
 
-	printf("BEGIN ERROR BAR COMPUTATION\nUSER ENCOURAGED TO PRAY\n");
+	printf("\tBEGIN ERROR BAR COMPUTATION\n\tUSER ENCOURAGED TO PRAY\n");
 
 	c = 'U';
 	fish = malloc(numparams*numparams*sizeof(double));
@@ -45,23 +45,19 @@ void errbars (int numparams, double *p, struct kslice *ks, double **covar)
 	n = numparams;
 	lda = numparams;
 	dgeequ_(&n, &n, fish, &lda, rscale, cscale, &row, &col, &amax, &info);
-	printf("scale: %d  %e  %e  %e\n", info, row, col, amax);
 /*
 	for (ii=0; ii<numparams; ii++)
 		for (ij=0; ij<numparams; ij++)
 			fish[ii*numparams+ij] *= rscale[ii]*cscale[ij];
 */
 
-	printf("PERFORMING DECOMPOSITION\n");
 	n = numparams;
 	lda = numparams;
 	dgetrf_(&n, &n, fish, &lda, piv, &info);
-	printf("DONE WITH DECOMPOSITION, info = %d\n", info);
 
 	worksize = 32*n;
 	work = malloc(worksize*sizeof(double));
 	dgetri_(&n, fish, &lda, piv, work, &worksize, &info);
-	printf("inverse info = %d\n", info);
 /*
 	for (ii=0; ii<numparams; ii++)
 		for (ij=0; ij<numparams; ij++)
@@ -95,7 +91,6 @@ void fisher (int numparams, double *p, struct kslice *ks, double *A)
 	double corr1, corr2, mod, datapt;
 	double *d1, **d2;
 
-	printf("called fisher with %d params\n", numparams);
 
 	d1 = calloc(numparams,sizeof(double));
 	d2 = malloc(numparams*sizeof(double*));

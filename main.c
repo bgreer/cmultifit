@@ -80,10 +80,6 @@ int main (int argc, char* argv[])
 		}
 	}
 
-	/* No more noise computation needed */
-	printf("WARNING: Maximum likelihood uncertainties not yet implemented!\n");
-	printf("\tReported error bars will be garbage.\n");
-
 	/* Open output file */
 	fpout = fopen(par.outfname, "w");
 	if (fpout==NULL)
