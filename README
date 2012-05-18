@@ -2,8 +2,6 @@ C-Multifit code.
 
 It's written in C, and it does multiple fits of things.
 
-Non-standard libraries used: cfitsio, mpfit
+Non-standard libraries used: cfitsio, mpfit, mkl
 
-Output file (specified in parameter file) is in the following format:
-k-bin	k	w/k	freq	err	amp	err	width	err	Ux	err	Uy	err	???
-(17 columns total)
+Not really useful to the public (yet?)
